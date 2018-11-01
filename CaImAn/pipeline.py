@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import argparse
+import tifffile as tif
 
 try:
     cv2.setNumThreads(0)
@@ -84,14 +85,27 @@ logging.basicConfig(format=
 #%%
 
 # save single-file movie if given folder of tiffs
+"""
 if os.path.isdir(infile[0]):
     tmpMovPath = os.path.join(infile[0], 'tmp_mov.hdf5')
     cm.load(glob.glob( os.path.join(infile[0], '*.tiff'))).save(tmpMovPath)
     fname = [tmpMovPath]
 else:
     fname = infile
+"""
 
-
+if os.path.isdir(infile[0]):
+    tmpMovPath = os.path.join(infile[0], 'tmp_mov.tif')
+    if not os.path.isfile(tmpMovPath):
+        tfiles = glob.glob( os.path.join(infile[0], '*.tiff'))
+        with tif.TiffWriter(tmpMovPath, bigtiff=True) as writer:
+            for i in range(len(tfiles)):
+                if (i%100) == 0:
+                    print("Writing movie to temp file, frame {}/{}".format(i,len(tfiles)))
+                writer.save(tif.imread(tfiles[i]), compress=6, photometric='minisblack')
+    fname = [tmpMovPath]
+else:
+    fname = infile
 
 
 
@@ -103,8 +117,8 @@ def main():
 #%% Select file(s) to be processed (download if not present)
     fnames = fname
 
-#%% First setup some parameters for data and motion correction
-
+    #%% First setup some parameters for data and motion correction
+    n_processes = 12
     # dataset dependent parameters
     fr = 30             # imaging rate in frames per second
     decay_time = 0.4    # length of a typical transient in seconds
@@ -152,7 +166,7 @@ def main():
 
 # %% start a cluster for parallel processing
     c, dview, n_processes = cm.cluster.setup_cluster(
-        backend='local', n_processes=None, single_thread=False)
+        backend='local', n_processes=n_processes, single_thread=False)
 
     print('checkpoint 1: mcorrect')
 
