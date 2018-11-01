@@ -9,7 +9,7 @@
 #SBATCH --array=0-9
 #SBATCH -o logs/caiman_%A_%j_%a.log
 #SBATCH -e logs/caiman_%A_%j_%a.log
-#SBATCH --mail-type=ALL
+#SBATCH --mail-type=ALL,ARRAY_TASKS
 #SBATCH --mail-user=stetlb01@nyulangone.org
 
 
@@ -60,7 +60,7 @@ export OPENBLAS_NUM_THREADS=1
 
 
 
-python pipeline.py $vid TEMP
+python pipeline.py $vid results/caiman_analysis_"$SLURM_ARRRAY_TASK_ID".hdf5  --slurmid $SLURM_ARRAY_TASK_ID
 
 
 exit
