@@ -7,8 +7,8 @@ import twop_rec_tools as tp
 import os
 from pathlib import Path
 import numpy as np
+from scipy.io import loadmat, savemat, whosmat
 
-vidDims = (3024, 520, 520)
 
 neurofinderList = ['/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.00/',
 '/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.01/',
@@ -32,15 +32,22 @@ caimanList = ['/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/ne
 
 
 
-suite2pList = [0,1,2,3,4,5,6,7]
-s2pBasePath = '/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405'
-suite2pList = [ str(list(Path(os.path.join(s2pBasePath,str(x))).rglob('*plane1.npz'))[0]) for x in suite2pList]
+suite2pList = ['/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/0/F_237405_0_plane1.mat',
+'/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/1/F_237405_1_plane1.mat',
+'/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/2/F_237405_2_plane1.mat',
+'/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/3/F_237405_3_plane1.mat',
+'/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/4/F_237405_4_plane1.mat',
+'/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/5/F_237405_5_plane1.mat',
+'/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/6/F_237405_6_plane1.mat']
 
 
-caimanDataList = [np.load(x) for x in caimanList]
-suite2pDataList = [np.load(x) for x in suite2pList]
+#% for local testing
+neurofinderList = [r'C:\Users\bnste\Documents\segmentation_project\neurofinder\data\neurofinder.00.02']
+neurofinderList = [str(list(Path(x).rglob('regions.json'))[0]) for x in neurofinderList ]
+caimanList = [r'C:\Users\bnste\Documents\segmentation_project\neurofinder\data\neurofinder.00.02\results\results.hdf5']
+suite2pList = [r'C:\Users\bnste\Documents\segmentation_project\neurofinder\data\neurofinder.00.02\results\F_237405_2_plane1.mat']
 
 
-caimanCells = [x['A'] for x in caimanDataList]
-suite2pCells = [tp.cellInfoFromMat(x, vidDims)[0] for x in suite2pDataList]
-neurofinderCells = [tp.loadNeurofinderRegions(x, vidDims[1:]) for x in neurofinderList]
+caimanCells = [tp.cellInfoCaimanHdf5(x)[0] for x in caimanList]
+suite2pCells = [tp.loadNeurofinderRegions(x)[0] for x in suite2pList]
+neurofinderCells = [tp.loadNeurofinderRegions for x in neurofinderList]

@@ -5,52 +5,93 @@ import numpy as np
 import tifffile as tf
 from scipy.io import loadmat, savemat, whosmat
 import json
+import os
+from pathlib import Path
+import h5py
+from scipy.sparse import csc_matrix
 
-
-def cellInfoFromMat(matLoad, vidDims, excludeNonCell=True):
-    """Take in an already-loaded .mat-file object from suite2p and extract the cell footprints and signal traces.
+def cellInfoS2pMat(matFile, excludeNonCell=True):
+    """Take in a path to a .mat-file object from suite2p and extract the cell footprints and signal traces.
     Input:`
-    matLoad:.mat object loaded into python from suite2p output
+    matFile:.mat object filepath
     vidDims: (tBins, xDim, yDim) dimensions of movie
     excludeNonCell: exclude "cells" that have stat.iscell==False in suite2p
     Output:
     (cellMasks, signalTraces)
     cellMasks is a numCells x xDim x yDim array of cell binary masks
-    signalTraces is a numCells x tBins array of fluorescence traces from each cell"""
+    signalTraces is a  tBins x numCells array of fluorescence traces from each cell"""
     
-    tBins, xDim, yDim = vidDims
-    
-    # extract cell masks
+
+    matLoad = loadmat(matFile)
     matStat = matLoad['stat'][0]
-    isCell = np.array([x[27][0,0] for x in matStat], dtype='bool')
+    matOps = matLoad['ops'][0]
+
+    statFields = list(matStat.dtype.fields.keys())
+    opsFields = list(matOps.dtype.fields.keys())
+
+    matOps = matOps[0]
+
+
+    tBins, xDim, yDim = [ matOps[opsFields.index(x)][0,0] for x in ['Nframes','Lx', 'Ly']]
+
+
+    # extract cell masks
+    isCell = np.array([x[statFields.index('iscell')][0,0] for x in matStat], dtype='bool')
     if excludeNonCell:
         matStat = matStat[isCell]
     nCells = len(matStat)
     cellMasks = np.zeros((nCells, xDim, yDim), dtype='uint8')
     for nCell in range(nCells):
-        xInds = matStat[nCell][2]
-        yInds = matStat[nCell][1]
+        xInds = matStat[nCell][statFields.index('xpix')]
+        yInds = matStat[nCell][statFields.index('ypix')]
         cellMasks[nCell, xInds, yInds] = 1
     
     # extract cell fluorescence traces
-    matFcell = matLoad['Fcell'][0,0]
+    matFcell = np.transpose(matLoad['Fcell'][0,0])
     if excludeNonCell:
-        matFcell = matFcell[isCell]
+        matFcell = matFcell[:,isCell]
     return (cellMasks, matFcell)
     
-def loadNeurofinderRegions(jsonFile, imgDim):
+def loadNeurofinderRegions(nfFolder):
     """
-    Load in region masks from a json Neurofinder regions.json file.
-    imgDim: (xDim, yDim) dimensions of images
+    Load in region masks from a Neurofinder folder path.
     Output:
     nCells x xDim x yDim binary masks 
     """
+    folderPath = Path(nfFolder)
+    jsonFile = str(list(folderPath.rglob('regions.json'))[0])
+    imgDims = tf.imread( str(next(folderPath.joinpath('images').glob('*.tiff'))) ).shape
     with open(jsonFile,'r') as f:
         regions = json.load(f)
 
-    masks = np.zeros( (len(regions),) + imgDim )
+    masks = np.zeros( (len(regions),) + imgDims)
     for n,s in enumerate(regions):
         coords = s['coordinates'] 
-        masks[n][list(zip(*coords))] = 1
+        masks[n][tuple(zip(*coords))] = 1
 
     return masks
+
+
+def cellInfoCaimanHdf5(hdf5File):
+    """
+    Given a CaImAn output .hdf5 file, returns the spatial cell profiles and cell signal traces.
+    Output:
+    (cellProfs, signalTraces)
+    cellProfs is a numCells x xDim x yDim array of spatial cell profiles
+    signalTraces is a  tBins x numCells array of fluorescence traces from each cell
+    """
+    cellProfs = []
+    signalTraces = []
+
+    with h5py.File(hdf5File, mode='r') as cFile:
+        est = cFile['estimates']
+        Ainfo = est['A']
+        C = np.transpose( np.array(est['C']) )
+        Adata = np.array(Ainfo['data'])
+        Aindices = np.array(Ainfo['indices'])
+        Aindptr = np.array(Ainfo['indptr'])
+        Ashape = np.array(Ainfo['shape'])
+        A = csc_matrix((Adata,Aindices,Aindptr) , shape=Ashape ).transpose()
+        A = np.array(A).reshape((A.shape[0],np.array(est['dims'])[0] ,-1))
+
+    return (cellProfs, signalTraces)

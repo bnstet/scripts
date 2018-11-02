@@ -114,7 +114,7 @@ else:
 def main():
     pass  # For compatibility between running under Spyder and the CLI
 
-#%% Select file(s) to be processed (download if not present)
+    #%% Select file(s) to be processed (download if not present)
     fnames = fname
 
     #%% First setup some parameters for data and motion correction
@@ -153,7 +153,7 @@ def main():
 
     opts = params.CNMFParams(params_dict=mc_dict)
 
-# %% play the movie (optional)
+    # %% play the movie (optional)
     # playing the movie using opencv. It requires loading the movie in memory.
     # To close the video press q
     display_images = False
@@ -164,30 +164,30 @@ def main():
         moviehandle = m_orig.resize(1, 1, ds_ratio)
         moviehandle.play(q_max=99.5, fr=60, magnification=2)
 
-# %% start a cluster for parallel processing
+    # %% start a cluster for parallel processing
     c, dview, n_processes = cm.cluster.setup_cluster(
         backend='local', n_processes=n_processes, single_thread=False)
 
     print('checkpoint 1: mcorrect')
 
-# %%% MOTION CORRECTION
+    # %%% MOTION CORRECTION
     # first we create a motion correction object with the specified parameters
     mc = MotionCorrect(fnames, dview=dview, **opts.get_group('motion'))
     # note that the file is not loaded in memory
 
-# %% Run (piecewise-rigid motion) correction using NoRMCorre
+    # %% Run (piecewise-rigid motion) correction using NoRMCorre
     mc.motion_correct(save_movie=True)
 
-# %% compare with original movie
+    # %% compare with original movie
     if display_images:
         m_orig = cm.load_movie_chain(fnames)
         m_els = cm.load(mc.mmap_file)
         ds_ratio = 0.2
         moviehandle = cm.concatenate([m_orig.resize(1, 1, ds_ratio) - mc.min_mov*mc.nonneg_movie,
-                                      m_els.resize(1, 1, ds_ratio)], axis=2)
+                                        m_els.resize(1, 1, ds_ratio)], axis=2)
         moviehandle.play(fr=60, q_max=99.5, magnification=2)  # press q to exit
 
-# %% MEMORY MAPPING
+    # %% MEMORY MAPPING
     border_to_0 = 0 if mc.border_nan is 'copy' else mc.border_to_0
     # you can include the boundaries of the FOV if you used the 'copy' option
     # during motion correction, although be careful about the components near
@@ -195,20 +195,20 @@ def main():
 
     # memory map the file in order 'C'
     fname_new = cm.save_memmap(mc.mmap_file, base_name='memmap_', order='C',
-                               border_to_0=border_to_0)  # exclude borders
+                                border_to_0=border_to_0)  # exclude borders
 
     # now load the file
     Yr, dims, T = cm.load_memmap(fname_new)
     images = np.reshape(Yr.T, [T] + list(dims), order='F')
     # load frames in python format (T x X x Y)
 
-# %% restart cluster to clean up memory
+    # %% restart cluster to clean up memory
     cm.stop_server(dview=dview)
     c, dview, n_processes = cm.cluster.setup_cluster(
         backend='local', n_processes=None, single_thread=False)
+    n_processes = int(n_processes)
 
-
-# %%  parameters for source extraction and deconvolution
+    # %%  parameters for source extraction and deconvolution
     p = 1                    # order of the autoregressive system
     gnb = 2                  # number of global background components
     merge_thresh = 0.8       # merging threshold, max correlation allowed
@@ -224,27 +224,27 @@ def main():
 
     # parameters for component evaluation
     opts_dict = {'fnames': fnames,
-                 'fr': fr,
-                 'nb': gnb,
-                 'rf': rf,
-                 'K': K,
-                 'gSig': gSig,
-                 'stride': stride_cnmf,
-                 'method_init': method_init,
-                 'rolling_sum': True,
-                 'merge_thr': merge_thresh,
-                 'n_processes': n_processes,
-                 'only_init': True,
-                 'ssub': ssub,
-                 'tsub': tsub}
+                    'fr': fr,
+                    'nb': gnb,
+                    'rf': rf,
+                    'K': K,
+                    'gSig': gSig,
+                    'stride': stride_cnmf,
+                    'method_init': method_init,
+                    'rolling_sum': True,
+                    'merge_thr': merge_thresh,
+                    'n_processes': n_processes,
+                    'only_init': True,
+                    'ssub': ssub,
+                    'tsub': tsub}
 
     opts.change_params(params_dict=opts_dict)
 
 
 
     print('checkpoint 2: patch cnmf')
-    
-# %% RUN CNMF ON PATCHES
+
+    # %% RUN CNMF ON PATCHES
     # First extract spatial and temporal components on patches and combine them
     # for this step deconvolution is turned off (p=0)
 
@@ -252,13 +252,13 @@ def main():
     cnm = cnmf.CNMF(n_processes, params=opts, dview=dview)
     cnm = cnm.fit(images)
 
-# %% ALTERNATE WAY TO RUN THE PIPELINE AT ONCE
+    # %% ALTERNATE WAY TO RUN THE PIPELINE AT ONCE
     #   you can also perform the motion correction plus cnmf fitting steps
     #   simultaneously after defining your parameters object using
     #  cnm1 = cnmf.CNMF(n_processes, params=opts, dview=dview)
     #  cnm1.fit_file(motion_correct=True)
 
-# %% plot contours of found components
+    # %% plot contours of found components
     Cn = cm.local_correlations(images, swap_dim=False)
     Cn[np.isnan(Cn)] = 0
     #cnm.estimates.plot_contours(img=Cn)
@@ -267,7 +267,7 @@ def main():
 
     print('checkpoint 3: eval components')
 
-# %% RE-RUN seeded CNMF on accepted patches to refine and perform deconvolution
+    # %% RE-RUN seeded CNMF on accepted patches to refine and perform deconvolution
     cnm.params.set('temporal', {'p': p})
     cnm2 = cnm.refit(images, dview=dview)
     # %% COMPONENT EVALUATION
@@ -281,11 +281,11 @@ def main():
     cnn_lowest = 0.1 # neurons with cnn probability lower than this value are rejected
 
     cnm2.params.set('quality', {'decay_time': decay_time,
-                               'min_SNR': min_SNR,
-                               'rval_thr': rval_thr,
-                               'use_cnn': True,
-                               'min_cnn_thr': cnn_thr,
-                               'cnn_lowest': cnn_lowest})
+                                'min_SNR': min_SNR,
+                                'rval_thr': rval_thr,
+                                'use_cnn': True,
+                                'min_cnn_thr': cnn_thr,
+                                'cnn_lowest': cnn_lowest})
     cnm2.estimates.evaluate_components(images, cnm2.params, dview=dview)
     # %% PLOT COMPONENTS
     #cnm2.estimates.plot_contours(img=Cn, idx=cnm2.estimates.idx_components)
@@ -294,9 +294,9 @@ def main():
 
     if display_images:
         cnm2.estimates.view_components(images, img=Cn,
-                                      idx=cnm2.estimates.idx_components)
+                                        idx=cnm2.estimates.idx_components)
         cnm2.estimates.view_components(images, img=Cn,
-                                      idx=cnm2.estimates.idx_components_bad)
+                                        idx=cnm2.estimates.idx_components_bad)
     #%% update object with selected components
     cnm2.estimates.select_components(use_object=True)
     #%% Extract DF/F values
@@ -308,22 +308,25 @@ def main():
     #%% reconstruct denoised movie (press q to exit)
     if display_images:
         cnm2.estimates.play_movie(images, q_max=99.9, gain_res=2,
-                                  magnification=2,
-                                  bpx=border_to_0,
-                                  include_bck=False)  # background not shown
+                                    magnification=2,
+                                    bpx=border_to_0,
+                                    include_bck=False)  # background not shown
 
     print('checkpoint 4: save')
 
     #%% save results
     cnm2.save(outfile)
-    
+
     #%% STOP CLUSTER and clean up log files
     cm.stop_server(dview=dview)
     #log_files = glob.glob('*_LOG_*')
     #for log_file in log_files:
     #    os.remove(log_file)
-    
+
     print('checkpoint 5: final')
+
+
+
 # %%
 # This is to mask the differences between running this demo in Spyder
 # versus from the CLI
