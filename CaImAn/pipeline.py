@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import argparse
+import tifffile as tif
 
 try:
     cv2.setNumThreads(0)
@@ -50,8 +51,8 @@ from caiman.utils.utils import download_demo
 
 parser = argparse.ArgumentParser(description='Execute the CaImAn (Calcium Imaging Analysis) pipeline on a video recording (.tif file or .tiff stack). Motion correct, determine neuronal regions, extract signals and denoise.')
 parser.add_argument('infile', type=str, nargs=1, help='file name (for .tif file) or folder (for .tiff stack)')
-parser.add_argument('outfile',type=str, nargs=1, help='file name under which to store the output .npz file')
-parser.add_argument('--log_fname', type=str, nargs='?', default="caiman_processing.log", help='file name under which to save a progress log. leave out to save to caiman_processing.log')
+parser.add_argument('outfile',type=str, nargs=1, help='file name under which to store the output hdf5 file (use .hdf5 suffix)')
+parser.add_argument('--log_fname', type=str, nargs='?', default="logs/caiman_processing.log", help='file name under which to save a progress log. leave out to save to caiman_processing.log')
 parser.add_argument('--mc_fname', type=str, nargs='?', default="", help='file name under which to save motion-corrected video. leave out to not save (default behavior)')
 parser.add_argument('--nomc', action='store_true', help='if used, then no motion correction will be run on the input video')
 parser.add_argument('--slurmid', type=int, nargs='?', default=0, help='slurm ID for multi-node processing. leave out to default to 0')
@@ -84,14 +85,27 @@ logging.basicConfig(format=
 #%%
 
 # save single-file movie if given folder of tiffs
+"""
 if os.path.isdir(infile[0]):
     tmpMovPath = os.path.join(infile[0], 'tmp_mov.hdf5')
     cm.load(glob.glob( os.path.join(infile[0], '*.tiff'))).save(tmpMovPath)
     fname = [tmpMovPath]
 else:
     fname = infile
+"""
 
-
+if os.path.isdir(infile[0]):
+    tmpMovPath = os.path.join(infile[0], 'tmp_mov.tif')
+    if not os.path.isfile(tmpMovPath):
+        tfiles = glob.glob( os.path.join(infile[0], '*.tiff'))
+        with tif.TiffWriter(tmpMovPath, bigtiff=True) as writer:
+            for i in range(len(tfiles)):
+                if (i%100) == 0:
+                    print("Writing movie to temp file, frame {}/{}".format(i,len(tfiles)))
+                writer.save(tif.imread(tfiles[i]), compress=6, photometric='minisblack')
+    fname = [tmpMovPath]
+else:
+    fname = infile
 
 
 
@@ -103,8 +117,8 @@ def main():
 #%% Select file(s) to be processed (download if not present)
     fnames = fname
 
-#%% First setup some parameters for data and motion correction
-
+    #%% First setup some parameters for data and motion correction
+    n_processes = 12
     # dataset dependent parameters
     fr = 30             # imaging rate in frames per second
     decay_time = 0.4    # length of a typical transient in seconds
@@ -152,7 +166,9 @@ def main():
 
 # %% start a cluster for parallel processing
     c, dview, n_processes = cm.cluster.setup_cluster(
-        backend='local', n_processes=None, single_thread=False)
+        backend='local', n_processes=n_processes, single_thread=False)
+
+    print('checkpoint 1: mcorrect')
 
 # %%% MOTION CORRECTION
     # first we create a motion correction object with the specified parameters
@@ -223,6 +239,11 @@ def main():
                  'tsub': tsub}
 
     opts.change_params(params_dict=opts_dict)
+
+
+
+    print('checkpoint 2: patch cnmf')
+    
 # %% RUN CNMF ON PATCHES
     # First extract spatial and temporal components on patches and combine them
     # for this step deconvolution is turned off (p=0)
@@ -242,6 +263,9 @@ def main():
     Cn[np.isnan(Cn)] = 0
     #cnm.estimates.plot_contours(img=Cn)
     #plt.title('Contour plots of found components')
+
+
+    print('checkpoint 3: eval components')
 
 # %% RE-RUN seeded CNMF on accepted patches to refine and perform deconvolution
     cnm.params.set('temporal', {'p': p})
@@ -264,7 +288,7 @@ def main():
                                'cnn_lowest': cnn_lowest})
     cnm2.estimates.evaluate_components(images, cnm2.params, dview=dview)
     # %% PLOT COMPONENTS
-    cnm2.estimates.plot_contours(img=Cn, idx=cnm2.estimates.idx_components)
+    #cnm2.estimates.plot_contours(img=Cn, idx=cnm2.estimates.idx_components)
 
     # %% VIEW TRACES (accepted and rejected)
 
@@ -288,16 +312,18 @@ def main():
                                   bpx=border_to_0,
                                   include_bck=False)  # background not shown
 
-    
+    print('checkpoint 4: save')
+
     #%% save results
-    cnm2.save('analysis_results.hdf5')
+    cnm2.save(outfile)
     
     #%% STOP CLUSTER and clean up log files
     cm.stop_server(dview=dview)
-    log_files = glob.glob('*_LOG_*')
-    for log_file in log_files:
-        os.remove(log_file)
-
+    #log_files = glob.glob('*_LOG_*')
+    #for log_file in log_files:
+    #    os.remove(log_file)
+    
+    print('checkpoint 5: final')
 # %%
 # This is to mask the differences between running this demo in Spyder
 # versus from the CLI

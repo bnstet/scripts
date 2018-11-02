@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --partition=fn_short
+#SBATCH --partition=gpu4_short
 #SBATCH --job-name=caiman_pipeline
-#SBATCH --mem=300GB
+#SBATCH --mem=30GB
 #SBATCH --time=0-02:00:00
 #SBATCH --tasks=1
 #SBATCH --cpus-per-task=16
@@ -9,7 +9,7 @@
 #SBATCH --array=0-9
 #SBATCH -o logs/caiman_%A_%j_%a.log
 #SBATCH -e logs/caiman_%A_%j_%a.log
-#SBATCH --mail-type=ALL
+#SBATCH --mail-type=ALL,ARRAY_TASKS
 #SBATCH --mail-user=stetlb01@nyulangone.org
 
 
@@ -58,10 +58,14 @@ export MKL_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 
 
+finallog=logs/final_log_"$SLURM_ARRAY_JOB_ID".txt
+printf "$(date)  Task $SLURM_ARRAY_TASK_ID starting analysis of $vid \n" >> $finallog
 
 
-python pipeline.py $vid TEMP
-
+python pipeline.py $vid results/caiman_analysis_"$SLURM_ARRAY_JOB_ID"_"$SLURM_ARRAY_TASK_ID".hdf5  --slurmid $SLURM_ARRAY_TASK_ID
+rc=$?
+if [[ $rc != 0 ]]; then printf "$(date)  Task $SLURM_ARRAY_TASK_ID failed with exit code $rc \n" >> $finallog; exit $rc; fi
+printf "$(date)  Task $SLURM_ARRAY_TASK_ID completed \n" >> $finallog
 
 exit
 
