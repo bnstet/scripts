@@ -86,12 +86,34 @@ def cellInfoCaimanHdf5(hdf5File):
     with h5py.File(hdf5File, mode='r') as cFile:
         est = cFile['estimates']
         Ainfo = est['A']
-        C = np.transpose( np.array(est['C']) )
+        signalTraces = np.transpose( np.array(est['C']) )
         Adata = np.array(Ainfo['data'])
         Aindices = np.array(Ainfo['indices'])
         Aindptr = np.array(Ainfo['indptr'])
         Ashape = np.array(Ainfo['shape'])
         A = csc_matrix((Adata,Aindices,Aindptr) , shape=Ashape ).transpose()
-        A = np.array(A).reshape((A.shape[0],np.array(est['dims'])[0] ,-1))
+        A = np.array(A.todense())
+        cellProfs = A.reshape((A.shape[0],np.array(est['dims'])[0] ,-1))
 
     return (cellProfs, signalTraces)
+
+
+
+def imageIou(img1,img2):
+    """
+    Return the intersection-over-union (IOU) score of two binary mask images (numpy arrays)
+    The images don't need to be binary - any nonzero entries will be interpreted as 1s. For this to work however there should be no negative entries.
+    Output: IOU score (float , between 0.0 and 1.0 inclusive)
+    """
+
+    intersection = np.sum( img1 * img2 != 0)
+    union = np.sum( (img1 + img2) != 0 )
+    return intersection / union
+
+
+def imageCorr(img1,img2):
+    """
+    Return the (Pearson) correlation coefficient between two images (numpy arrays)
+    Output: correlation coefficient (float, between -1.0 and 1.0 inclusive)
+    """
+    return  np.corrcoef( img1.flatten(), img2.flatten() )[0,1]

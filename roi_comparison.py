@@ -9,7 +9,9 @@ from pathlib import Path
 import numpy as np
 from scipy.io import loadmat, savemat, whosmat
 
+from pandas import DataFrame
 
+"""
 neurofinderList = ['/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.00/',
 '/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.01/',
 '/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.02/',
@@ -18,7 +20,6 @@ neurofinderList = ['/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/da
 '/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.02.00/',
 '/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.03.00/',
 '/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.04.00/']
-neurofinderList = [str(list(Path(x).rglob('regions.json'))[0]) for x in neurofinderList ]
 
 
 caimanList = ['/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.00/images/caiman_output.npz',
@@ -39,15 +40,37 @@ suite2pList = ['/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packa
 '/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/4/F_237405_4_plane1.mat',
 '/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/5/F_237405_5_plane1.mat',
 '/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/6/F_237405_6_plane1.mat']
-
+"""
 
 #% for local testing
 neurofinderList = [r'C:\Users\bnste\Documents\segmentation_project\neurofinder\data\neurofinder.00.02']
-neurofinderList = [str(list(Path(x).rglob('regions.json'))[0]) for x in neurofinderList ]
 caimanList = [r'C:\Users\bnste\Documents\segmentation_project\neurofinder\data\neurofinder.00.02\results\results.hdf5']
 suite2pList = [r'C:\Users\bnste\Documents\segmentation_project\neurofinder\data\neurofinder.00.02\results\F_237405_2_plane1.mat']
 
 
 caimanCells = [tp.cellInfoCaimanHdf5(x)[0] for x in caimanList]
-suite2pCells = [tp.loadNeurofinderRegions(x)[0] for x in suite2pList]
-neurofinderCells = [tp.loadNeurofinderRegions for x in neurofinderList]
+suite2pCells = [tp.cellInfoS2pMat(x)[0] for x in suite2pList]
+neurofinderCells = [tp.loadNeurofinderRegions(x) for x in neurofinderList]
+
+
+#% construct mean images and compute IOU score between neurofinder (ground truth) and estimation methods.
+#% caiman mean image is converted to binary mask by taking the 90th percentile of nonzero entries.
+
+caimanThresh = .9
+caimanMeans = [ np.mean(x, axis=0) for x in caimanCells  ]
+caimanMeanMask = [ (x > np.percentile(x[x.nonzero()], caimanThresh )).astype('uint8') for x in caimanMeans  ]
+suite2pMeans = [ np.mean(x, axis=0) for x in suite2pCells  ]
+suite2pMeanMask = [ (x > 0).astype('uint8') for x in suite2pMeans   ]
+neurofinderMeans = [ np.mean(x, axis=0) for x in neurofinderCells  ]
+neurofinderMeanMask = [ (x > 0).astype('uint8') for x in neurofinderMeans  ]
+
+
+scores = [ { 'caiman/S2p/IOU': imageIou(caimanMeanMask[i], suite2pMeanMask[i] ),
+                'caiman/NF/IOU': imageIou(caimanMeanMask[i], neurofinderMeanMask[i] ),
+                'S2p/NF/IOU': imageIou(neurofinderMeanMask[i], suite2pMeanMask[i] ),
+                'caiman/S2p/Corr': imageCorr(caimanMeans[i], suite2pMeans[i] ),
+                'caiman/NF/Corr': imageCorr(caimanMeans[i], neurofinderMeans[i] ),
+                'S2p/NF/Corr': imageCorr(neurofinderMeans[i], suite2pMeans[i] )
+                }  for i in range(len(neurofinderMeans))]
+
+
