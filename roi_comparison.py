@@ -65,12 +65,19 @@ neurofinderMeans = [ np.mean(x, axis=0) for x in neurofinderCells  ]
 neurofinderMeanMask = [ (x > 0).astype('uint8') for x in neurofinderMeans  ]
 
 
-scores = [ { 'caiman/S2p/IOU': imageIou(caimanMeanMask[i], suite2pMeanMask[i] ),
-                'caiman/NF/IOU': imageIou(caimanMeanMask[i], neurofinderMeanMask[i] ),
-                'S2p/NF/IOU': imageIou(neurofinderMeanMask[i], suite2pMeanMask[i] ),
-                'caiman/S2p/Corr': imageCorr(caimanMeans[i], suite2pMeans[i] ),
-                'caiman/NF/Corr': imageCorr(caimanMeans[i], neurofinderMeans[i] ),
-                'S2p/NF/Corr': imageCorr(neurofinderMeans[i], suite2pMeans[i] )
+scores = [ { 'caiman/S2p/IOU': tp.imageIou(caimanMeanMask[i], suite2pMeanMask[i] ),
+                'caiman/NF/IOU': tp.imageIou(caimanMeanMask[i], neurofinderMeanMask[i] ),
+                'S2p/NF/IOU': tp.imageIou(neurofinderMeanMask[i], suite2pMeanMask[i] ),
+                'caiman/S2p/Corr': tp.imageCorr(caimanMeans[i], suite2pMeans[i] ),
+                'caiman/NF/Corr': tp.imageCorr(caimanMeans[i], neurofinderMeans[i] ),
+                'S2p/NF/Corr': tp.imageCorr(neurofinderMeans[i], suite2pMeans[i] )
                 }  for i in range(len(neurofinderMeans))]
 
-
+for n,x in enumerate(scores):
+        print('Scoring info for dataset {}: '.format(n))
+        print('Caiman data location: {}'.format(caimanList[n]))
+        print('Suite2p data location: {}'.format(suite2pList[n]))
+        print('Neurofinder data location: {}'.format(neurofinderList[n]))
+        for key,val in x.items():
+            print("Method: {}  Score: {:8.4f}".format(key, val))
+        print('\n')
