@@ -40,7 +40,7 @@ suite2pList = ['/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packa
 '/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/4/F_237405_4_plane1.mat',
 '/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/5/F_237405_5_plane1.mat',
 '/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/6/F_237405_6_plane1.mat',
-'/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/6/F_237405_7_plane1.mat']
+'/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/7/F_237405_7_plane1.mat']
 """
 
 #% for local testing
