@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 Complete demo pipeline for processing two photon calcium imaging data using the
 CaImAn batch algorithm. The processing pipeline included motion correction,
@@ -49,9 +48,11 @@ from caiman.source_extraction.cnmf import params as params
 from caiman.utils.utils import download_demo
 
 
+
 parser = argparse.ArgumentParser(description='Execute the CaImAn (Calcium Imaging Analysis) pipeline on a video recording (.tif file or .tiff stack). Motion correct, determine neuronal regions, extract signals and denoise.')
 parser.add_argument('infile', type=str, nargs=1, help='file name (for .tif file) or folder (for .tiff stack)')
 parser.add_argument('outfile',type=str, nargs=1, help='file name under which to store the output hdf5 file (use .hdf5 suffix)')
+parser.add_argument('--config', type=str, nargs='?', help='file name for config file. should consist of a definition of a list of python dictionaries' )
 parser.add_argument('--log_fname', type=str, nargs='?', default="logs/caiman_processing.log", help='file name under which to save a progress log. leave out to save to caiman_processing.log')
 parser.add_argument('--mc_fname', type=str, nargs='?', default="", help='file name under which to save motion-corrected video. leave out to not save (default behavior)')
 parser.add_argument('--nomc', action='store_true', help='if used, then no motion correction will be run on the input video')
@@ -94,15 +95,29 @@ else:
     fname = infile
 """
 
-if os.path.isdir(infile[0]):
+
+
+if '.txt' in infile[0]:
+    with open(infile[0], 'w') as f:
+        flist = []
+        for line in f:
+            flist.append(line.replace('\n',''))
+    fname = flist
+elif os.path.isdir(infile[0]):
     tmpMovPath = os.path.join(infile[0], 'tmp_mov.tif')
     if not os.path.isfile(tmpMovPath):
-        tfiles = glob.glob( os.path.join(infile[0], '*.tiff'))
+        tfiles = glob.glob( os.path.join(infile[0], '*.tiff')) + glob.glob( os.path.join(infile[0], '*.tif'))
+        tfiles = sorted(list(set(tfiles)))
         with tif.TiffWriter(tmpMovPath, bigtiff=True) as writer:
             for i in range(len(tfiles)):
                 if (i%100) == 0:
                     print("Writing movie to temp file, frame {}/{}".format(i,len(tfiles)))
-                writer.save(tif.imread(tfiles[i]), compress=6, photometric='minisblack')
+                im = tif.imread(tfiles[i])
+                if len(im.shape)==2:
+                    writer.save(im, compress=6, photometric='minisblack')
+                else:
+                    for j in range(len(im)):
+                        writer.save(im[j], compress=6, photometric='minisblack')
     fname = [tmpMovPath]
 else:
     fname = infile
@@ -118,9 +133,11 @@ def main():
     fnames = fname
 
     #%% First setup some parameters for data and motion correction
+    
     n_processes = 12
+
     # dataset dependent parameters
-    fr = 30             # imaging rate in frames per second
+    fr = 3.6             # imaging rate in frames per second
     decay_time = 0.4    # length of a typical transient in seconds
     dxy = (2., 2.)      # spatial resolution in x and y in (um per pixel)
     # note the lower than usual spatial resolution here
@@ -128,7 +145,7 @@ def main():
     patch_motion_um = (100., 100.)  # patch size for non-rigid correction in um
 
     # motion correction parameters
-    pw_rigid = True       # flag to select rigid vs pw_rigid motion correction
+    pw_rigid = False       # flag to select rigid vs pw_rigid motion correction
     # maximum allowed rigid shift in pixels
     max_shifts = [int(a/b) for a, b in zip(max_shift_um, dxy)]
     # start a new patch for pw-rigid motion correction every x pixels
@@ -208,17 +225,16 @@ def main():
         backend='local', n_processes=None, single_thread=False)
     n_processes = int(n_processes)
 
+    
     # %%  parameters for source extraction and deconvolution
     p = 1                    # order of the autoregressive system
     gnb = 2                  # number of global background components
     merge_thresh = 0.8       # merging threshold, max correlation allowed
-    rf = 15
-    # half-size of the patches in pixels. e.g., if rf=25, patches are 50x50
-    stride_cnmf = 6          # amount of overlap between the patches in pixels
+    rf = 15                  # half-size of the patches in pixels. e.g., if rf=25, patches are 50x50
+    stride_cnmf = 4          # amount of overlap between the patches in pixels
     K = 4                    # number of components per patch
     gSig = [4, 4]            # expected half size of neurons in pixels
-    # initialization method (if analyzing dendritic data using 'sparse_nmf')
-    method_init = 'greedy_roi'
+    method_init = 'greedy_roi'   # initialization method (if analyzing dendritic data using 'sparse_nmf')
     ssub = 2                     # spatial subsampling during initialization
     tsub = 2                     # temporal subsampling during intialization
 
@@ -270,14 +286,15 @@ def main():
     # %% RE-RUN seeded CNMF on accepted patches to refine and perform deconvolution
     cnm.params.set('temporal', {'p': p})
     cnm2 = cnm.refit(images, dview=dview)
+    
     # %% COMPONENT EVALUATION
     # the components are evaluated in three ways:
     #   a) the shape of each component must be correlated with the data
     #   b) a minimum peak SNR is required over the length of a transient
     #   c) each shape passes a CNN based classifier
-    min_SNR = 2  # signal to noise ratio for accepting a component
-    rval_thr = 0.85  # space correlation threshold for accepting a component
-    cnn_thr = 0.99  # threshold for CNN based classifier
+    min_SNR = 1 # signal to noise ratio for accepting a component
+    rval_thr = 0.7  # space correlation threshold for accepting a component
+    cnn_thr = 0.97  # threshold for CNN based classifier
     cnn_lowest = 0.1 # neurons with cnn probability lower than this value are rejected
 
     cnm2.params.set('quality', {'decay_time': decay_time,
@@ -287,9 +304,11 @@ def main():
                                 'min_cnn_thr': cnn_thr,
                                 'cnn_lowest': cnn_lowest})
     cnm2.estimates.evaluate_components(images, cnm2.params, dview=dview)
+    
     # %% PLOT COMPONENTS
     #cnm2.estimates.plot_contours(img=Cn, idx=cnm2.estimates.idx_components)
 
+    
     # %% VIEW TRACES (accepted and rejected)
 
     if display_images:
@@ -297,8 +316,10 @@ def main():
                                         idx=cnm2.estimates.idx_components)
         cnm2.estimates.view_components(images, img=Cn,
                                         idx=cnm2.estimates.idx_components_bad)
+    
     #%% update object with selected components
     cnm2.estimates.select_components(use_object=True)
+    
     #%% Extract DF/F values
     cnm2.estimates.detrend_df_f(quantileMin=8, frames_window=250)
 

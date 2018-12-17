@@ -74,11 +74,13 @@ def loadNeurofinderRegions(nfFolder):
 
 def cellInfoCaimanHdf5(hdf5File):
     """
-    Given a CaImAn output .hdf5 file, returns the spatial cell profiles and cell signal traces.
+    Given a CaImAn output .hdf5 file, returns the spatial cell profiles, cell signal traces, and background profiles and traces
     Output:
-    (cellProfs, signalTraces)
+    (cellProfs, signalTraces, bgProfs, bgTraces)
     cellProfs is a numCells x xDim x yDim array of spatial cell profiles
     signalTraces is a  tBins x numCells array of fluorescence traces from each cell
+    bgProfs: nBGComps x xDim x yDim 
+    bgTraces: tBins x nBGComps
     """
     cellProfs = []
     signalTraces = []
@@ -94,9 +96,14 @@ def cellInfoCaimanHdf5(hdf5File):
         A = csc_matrix((Adata,Aindices,Aindptr) , shape=Ashape ).transpose()
         A = np.array(A.todense())
         cellProfs = A.reshape((A.shape[0],np.array(est['dims'])[0] ,-1))
+        f = np.array(est['f']).transpose()
+        b = np.array(est['b']).transpose()
+        b = b.reshape(b.shape[0],cellProfs.shape[1],cellProfs.shape[2])
+    return (cellProfs, signalTraces, b, f)
 
-    return (cellProfs, signalTraces)
-
+def denoisedCaimanMovie(hdf5File):
+    cellProfs, signalTraces, bgProfs, bgTraces = cellInfoCaimanHdf5(hdf5File)
+    return np.tensordot(signalTraces, cellProfs, (-1,0) )+ np.tensordot(  bgTraces, bgProfs, (-1,0))
 
 
 def imageIou(img1,img2):

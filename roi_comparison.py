@@ -11,7 +11,7 @@ from scipy.io import loadmat, savemat, whosmat
 
 from pandas import DataFrame
 
-"""
+
 neurofinderList = ['/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.00/',
 '/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.01/',
 '/gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.02/',
@@ -47,7 +47,7 @@ suite2pList = ['/gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packa
 neurofinderList = [r'C:\\Users\bnste\Documents\segmentation_project\neurofinder\data\neurofinder.00.02']
 caimanList = [r'C:\\Users\bnste\Documents\segmentation_project\neurofinder\data\neurofinder.00.02\results\results.hdf5']
 suite2pList = [r'C:\\Users\bnste\Documents\segmentation_project\neurofinder\data\neurofinder.00.02\results\F_237405_2_plane1.mat']
-
+"""
 
 caimanCells = [tp.cellInfoCaimanHdf5(x)[0] for x in caimanList]
 suite2pCells = [tp.cellInfoS2pMat(x)[0] for x in suite2pList]
