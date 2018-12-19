@@ -2,7 +2,7 @@
 #SBATCH --partition=gpu4_short
 #SBATCH --job-name=caiman_pipeline
 #SBATCH --mem=30GB
-#SBATCH --time=0-02:00:00
+#SBATCH --time=0-06:00:00
 #SBATCH --tasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --nodes=1

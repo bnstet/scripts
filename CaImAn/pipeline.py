@@ -98,10 +98,10 @@ else:
 
 
 if '.txt' in infile[0]:
-    with open(infile[0], 'w') as f:
+    with open(infile[0], 'r') as f:
         flist = []
         for line in f:
-            flist.append(line.replace('\n',''))
+            flist = flist + [line.replace('\n','')]
     fname = flist
 elif os.path.isdir(infile[0]):
     tmpMovPath = os.path.join(infile[0], 'tmp_mov.tif')
@@ -122,7 +122,7 @@ elif os.path.isdir(infile[0]):
 else:
     fname = infile
 
-
+print('Using file(s): {}'.format(fname))
 
 #%%
 
