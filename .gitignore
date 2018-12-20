@@ -2,3 +2,5 @@
 CaImAn/logs/*
 CaImAn/results/*
 *.txt
+.ipynb_checkpoints
+*.npz
