@@ -50,8 +50,9 @@ from caiman.utils.utils import download_demo
 
 
 parser = argparse.ArgumentParser(description='Execute the CaImAn (Calcium Imaging Analysis) pipeline on a video recording (.tif file or .tiff stack). Motion correct, determine neuronal regions, extract signals and denoise.')
-parser.add_argument('infile', type=str, nargs=1, help='file name (for .tif file) or folder (for .tiff stack)')
+parser.add_argument('infile', type=str, nargs=1, help='file name (for .tif file) or folder (for .tiff stack). can also be a .txt file containing a list of .tif files for multiple chunks.')
 parser.add_argument('outfile',type=str, nargs=1, help='file name under which to store the output hdf5 file (use .hdf5 suffix)')
+parser.add_argument('--mc_temp',type=str, nargs='?', default=None, help='template .tif file for motion correction')
 parser.add_argument('--config', type=str, nargs='?', help='file name for config file. should consist of a definition of a list of python dictionaries' )
 parser.add_argument('--log_fname', type=str, nargs='?', default="logs/caiman_processing.log", help='file name under which to save a progress log. leave out to save to caiman_processing.log')
 parser.add_argument('--mc_fname', type=str, nargs='?', default="", help='file name under which to save motion-corrected video. leave out to not save (default behavior)')
@@ -61,6 +62,7 @@ args = vars(parser.parse_args())
 
 infile = args['infile']
 outfile = args['outfile'][0]
+mc_temp = args['mc_temp']
 log_fname = args['log_fname']
 mc_fname = args['mc_fname']
 nomc = args['nomc']
@@ -95,7 +97,7 @@ else:
     fname = infile
 """
 
-
+# process input file
 
 if '.txt' in infile[0]:
     with open(infile[0], 'r') as f:
@@ -123,6 +125,13 @@ else:
     fname = infile
 
 print('Using file(s): {}'.format(fname))
+
+## process template into ndarray
+
+if mc_temp is not None:
+    mc_temp = tif.imread(mc_temp)
+
+
 
 #%%
 
@@ -193,7 +202,7 @@ def main():
     # note that the file is not loaded in memory
 
     # %% Run (piecewise-rigid motion) correction using NoRMCorre
-    mc.motion_correct(save_movie=True)
+    mc.motion_correct(save_movie=True, template=mc_temp)
 
     # %% compare with original movie
     if display_images:
