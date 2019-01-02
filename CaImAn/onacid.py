@@ -41,7 +41,9 @@ def main():
 # %%  download and list all files to be processed
 
  
-    fnames = ['C:/Users/bnste/Documents/scripts/jon_2p_data/adj3_JG24831_181210_field1_behavior_00001_00002.tif']
+    fnames = ['C:/Users/bnste/Documents/scripts/jon_2p_data/JG24831_181210_field1_behavior_00001_00001_filtered__channel_0.tif',
+        'C:/Users/bnste/Documents/scripts/jon_2p_data/JG24831_181210_field1_behavior_00001_00002_filtered__channel_0.tif',
+        'C:/Users/bnste/Documents/scripts/jon_2p_data/JG24831_181210_field1_behavior_00001_00003_filtered__channel_0.tif']
 
     # your list of files should look something like this
     logging.info(fnames)

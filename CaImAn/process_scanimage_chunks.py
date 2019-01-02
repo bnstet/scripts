@@ -54,7 +54,11 @@ for n,f in enumerate(file_chunks):
         print('Processing channel {}'.format(ch_num))
         ch_out_base, ch_out_file = os.path.split(f)
         pre_ext, ext = os.path.splitext(ch_out_file)
-        ch_out_file = os.path.join(ch_out_base , pre_ext) + '_channel_{}'.format(ch_num) + '.tif'
+        if max_dev is not None:
+            filter_tag = '_filtered'
+        else:
+            filter_tag = ''
+        ch_out_file = os.path.join(ch_out_base , pre_ext) + filter_tag + '_channel_{}'.format(ch_num) + '.tif'
         ch_mov = mov[ch_num::n_channels]
         ch_mean = np.mean(ch_mov)
         ch_means = np.mean(ch_mov,axis=(-1,-2), keepdims=True)
@@ -77,9 +81,9 @@ for n,f in enumerate(file_chunks):
         
         if os.path.exists(ch_out_file):
             os.remove(ch_out_file)
-    
+
         print('Saving to file {}'.format(ch_out_file))
-        tif.imsave(ch_out_file, data=ch_mov, append=True, compress=6, imagej=True)
+        tif.imsave(ch_out_file, data=ch_mov,  imagej=True)
         print('Save complete.')
         print('')
 
