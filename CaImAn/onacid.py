@@ -40,28 +40,19 @@ def main():
 
 # %%  download and list all files to be processed
 
-    # folder inside ./example_movies where files will be saved
-    fld_name = 'Mesoscope'
-    download_demo('Tolias_mesoscope_1.hdf5', fld_name)
-    download_demo('Tolias_mesoscope_2.hdf5', fld_name)
-    download_demo('Tolias_mesoscope_3.hdf5', fld_name)
-
-    # folder where files are located
-    folder_name = os.path.join(caiman_datadir(), 'example_movies', fld_name)
-    extension = 'hdf5'                                  # extension of files
-    # read all files to be processed
-    fnames = glob.glob(folder_name + '/*' + extension)
+ 
+    fnames = ['C:/Users/bnste/Documents/scripts/jon_2p_data/adj3_JG24831_181210_field1_behavior_00001_00002.tif']
 
     # your list of files should look something like this
     logging.info(fnames)
 
 # %%   Set up some parameters
 
-    fr = 15  # frame rate (Hz)
-    decay_time = 0.5  # approximate length of transient event in seconds
-    gSig = (3, 3)  # expected half size of neurons
+    fr = 30  # frame rate (Hz)
+    decay_time = 0.4  # approximate length of transient event in seconds
+    gSig = (8, 8)  # expected half size of neurons
     p = 1  # order of AR indicator dynamics
-    min_SNR = 1   # minimum SNR for accepting new components
+    min_SNR = 2   # minimum SNR for accepting new components
     ds_factor = 1  # spatial downsampling factor (increases speed but may lose some fine structure)
     gnb = 2  # number of background components
     gSig = tuple(np.ceil(np.array(gSig) / ds_factor).astype('int')) # recompute gSig if downsampling is involved
@@ -69,12 +60,12 @@ def main():
     pw_rigid = False  # flag for pw-rigid motion correction (slower but potentially more accurate)
     max_shifts_online = np.ceil(10.).astype('int')  # maximum allowed shift during motion correction
     sniper_mode = True  # use a CNN to detect new neurons (o/w space correlation)
-    rval_thr = 0.9  # soace correlation threshold for candidate components
+    rval_thr = 0.8  # space correlation threshold for candidate components
     # set up some additional supporting parameters needed for the algorithm
     # (these are default values but can change depending on dataset properties)
-    init_batch = 200  # number of frames for initialization (presumably from the first file)
-    K = 2  # initial number of components
-    epochs = 2  # number of passes over the data
+    init_batch = 300  # number of frames for initialization (presumably from the first file)
+    K = 20  # initial number of components
+    epochs = 4  # number of passes over the data
     show_movie = False # show the movie as the data gets processed
 
     params_dict = {'fnames': fnames,
@@ -104,29 +95,34 @@ def main():
 
     cnm = cnmf.online_cnmf.OnACID(params=opts)
     cnm.fit_online()
+    """
+    # %% plot contours
 
-# %% plot contours
+        logging.info('Number of components: ' + str(cnm.estimates.A.shape[-1]))
+        Cn = cm.load(fnames[0], subindices=slice(0,500)).local_correlations(swap_dim=False)
+        cnm.estimates.plot_contours(img=Cn, display_numbers=False)
 
-    logging.info('Number of components: ' + str(cnm.estimates.A.shape[-1]))
-    Cn = cm.load(fnames[0], subindices=slice(0,500)).local_correlations(swap_dim=False)
-    cnm.estimates.plot_contours(img=Cn, display_numbers=False)
 
-# %% view components
-    cnm.estimates.view_components(img=Cn)
 
-# %% plot timing performance (if a movie is generated during processing, timing
-# will be severely over-estimated)
+    # %% view components
+        cnm.estimates.view_components(img=Cn)
 
-    T_motion = 1e3*np.array(cnm.t_motion)
-    T_detect = 1e3*np.array(cnm.t_detect)
-    T_shapes = 1e3*np.array(cnm.t_shapes)
-    T_online = 1e3*np.array(cnm.t_online) - T_motion - T_detect - T_shapes
-    plt.figure()
-    plt.stackplot(np.arange(len(T_motion)), T_motion, T_online, T_detect, T_shapes)
-    plt.legend(labels=['motion', 'process', 'detect', 'shapes'], loc=2)
-    plt.title('Processing time allocation')
-    plt.xlabel('Frame #')
-    plt.ylabel('Processing time [ms]')
+    # %% plot timing performance (if a movie is generated during processing, timing
+    # will be severely over-estimated)
+
+        T_motion = 1e3*np.array(cnm.t_motion)
+        T_detect = 1e3*np.array(cnm.t_detect)
+        T_shapes = 1e3*np.array(cnm.t_shapes)
+        T_online = 1e3*np.array(cnm.t_online) - T_motion - T_detect - T_shapes
+        plt.figure()
+        plt.stackplot(np.arange(len(T_motion)), T_motion, T_online, T_detect, T_shapes)
+        plt.legend(labels=['motion', 'process', 'detect', 'shapes'], loc=2)
+        plt.title('Processing time allocation')
+        plt.xlabel('Frame #')
+        plt.ylabel('Processing time [ms]')
+    """
+    cnm.save('C:/Users/bnste/Documents/scripts/jon_2p_data/analysis_002.hdf5')
+       
 # %%
 # This is to mask the differences between running this demo in Spyder
 # versus from the CLI
