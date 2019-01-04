@@ -1,6 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+Process vids from scanimage during 2p stimulation into files suitable for analysis.
 
+- split out channels into separate vids
+- make the vids imagej-compatible
+- filter out frames with stimulation artifacts
+
+use:
+python process_scanimage_chunks.py vid_list_file.txt
+
+"""
 
 
 import glob
@@ -8,6 +18,7 @@ import numpy as np
 import os
 import logging
 import matplotlib.pyplot as plt
+import sys
 
 try:
     if __IPYTHON__:
@@ -30,9 +41,9 @@ import tifffile as tif
 
 
 # movie chunks to be processed
-file_chunks = [r'C:\Users\bnste\Documents\scripts\jon_2p_data\JG24831_181210_field1_behavior_00001_00001.tif', 
-    r'C:\Users\bnste\Documents\scripts\jon_2p_data\JG24831_181210_field1_behavior_00001_00002.tif',
-    r'C:\Users\bnste\Documents\scripts\jon_2p_data\JG24831_181210_field1_behavior_00001_00003.tif']
+with open(sys.argv[1], mode='r') as f:
+    file_list = [x.replace('\n','') for x in f.readlines()]
+
 
 # channels from scanimage (to be de-interleaved)
 n_channels = 2
@@ -45,7 +56,7 @@ saved_channels = [0]
 # NOTE: also used to filter base on frame-by-frame differences
 max_dev = 4
 
-for n,f in enumerate(file_chunks):
+for n,f in enumerate(file_list):
     print('Processing movie file {}'.format(f))
     mov = tif.imread(f)
     if len(mov.shape)==3:

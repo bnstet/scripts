@@ -301,11 +301,7 @@ def main():
     #   a) the shape of each component must be correlated with the data
     #   b) a minimum peak SNR is required over the length of a transient
     #   c) each shape passes a CNN based classifier
-<<<<<<< HEAD
-    min_SNR = 2 # signal to noise ratio for accepting a component
-=======
-    min_SNR = 1.5 # signal to noise ratio for accepting a component
->>>>>>> origin/master
+    min_SNR = 1 # signal to noise ratio for accepting a component
     rval_thr = 0.7  # space correlation threshold for accepting a component
     cnn_thr = 0.98  # threshold for CNN based classifier
     cnn_lowest = 0.1 # neurons with cnn probability lower than this value are rejected
