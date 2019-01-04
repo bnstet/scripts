@@ -6,7 +6,7 @@
 #SBATCH --tasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --nodes=1
-#SBATCH --array=0-19
+#SBATCH --array=0-10
 #SBATCH -o logs/mc_%A_%j_%a.log
 #SBATCH -e logs/mc_%A_%j_%a.log
 #SBATCH --mail-type=ALL,ARRAY_TASKS
