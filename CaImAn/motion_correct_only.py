@@ -89,7 +89,7 @@ def main():
     n_processes = 12
 
     # dataset dependent parameters
-    fr = 3.6             # imaging rate in frames per second
+    fr = 30            # imaging rate in frames per second
     decay_time = 0.4    # length of a typical transient in seconds
     dxy = (2., 2.)      # spatial resolution in x and y in (um per pixel)
     # note the lower than usual spatial resolution here
