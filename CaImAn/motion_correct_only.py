@@ -70,9 +70,15 @@ if os.path.isdir(infile[0]):
 else:
     fname = infile
 
-in_filename, in_file_ext = os.path.splitext(orig_in)
+
+
 if len(outfile)==0:
-    outfile = in_filename + '_mc' + in_file_ext
+    if os.path.isdir(orig_in):
+        outfile = orig_in + '_mc'
+        in_file_ext = ''
+    else:
+        in_filename, in_file_ext = os.path.splitext(orig_in)
+        outfile = in_filename + '_mc' + in_file_ext
 else:
     outfile = outfile[0]
 

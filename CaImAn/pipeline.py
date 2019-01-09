@@ -146,9 +146,9 @@ def main():
     n_processes = 12
 
     # dataset dependent parameters
-    fr = 30             # imaging rate in frames per second
-    decay_time = 0.4    # length of a typical transient in seconds
-    dxy = (1., 1.)      # spatial resolution in x and y in (um per pixel)
+    fr = 3.3             # imaging rate in frames per second
+    decay_time = 0.7    # length of a typical transient in seconds
+    dxy = (2., 2.)      # spatial resolution in x and y in (um per pixel)
     # note the lower than usual spatial resolution here
     max_shift_um = (12., 12.)       # maximum shift in um
     patch_motion_um = (100., 100.)  # patch size for non-rigid correction in um
@@ -242,7 +242,7 @@ def main():
     rf = 25                  # half-size of the patches in pixels. e.g., if rf=25, patches are 50x50
     stride_cnmf = 8          # amount of overlap between the patches in pixels
     K = 4                    # number of components per patch
-    gSig = [12, 12]            # expected half size of neurons in pixels
+    gSig = [8, 8]            # expected half size of neurons in pixels
     method_init = 'greedy_roi'   # initialization method (if analyzing dendritic data using 'sparse_nmf')
     ssub = 2                     # spatial subsampling during initialization
     tsub = 2                     # temporal subsampling during intialization
@@ -301,9 +301,9 @@ def main():
     #   a) the shape of each component must be correlated with the data
     #   b) a minimum peak SNR is required over the length of a transient
     #   c) each shape passes a CNN based classifier
-    min_SNR = 1 # signal to noise ratio for accepting a component
+    min_SNR = .25 # signal to noise ratio for accepting a component
     rval_thr = 0.7  # space correlation threshold for accepting a component
-    cnn_thr = 0.98  # threshold for CNN based classifier
+    cnn_thr = 0.99  # threshold for CNN based classifier
     cnn_lowest = 0.1 # neurons with cnn probability lower than this value are rejected
 
     cnm2.params.set('quality', {'decay_time': decay_time,

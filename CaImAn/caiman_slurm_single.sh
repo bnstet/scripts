@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --partition=gpu4_short
 #SBATCH --job-name=caiman_pipeline
-#SBATCH --mem=30GB
+#SBATCH --mem=100GB
 #SBATCH --time=0-06:00:00
 #SBATCH --tasks=1
 #SBATCH --cpus-per-task=16

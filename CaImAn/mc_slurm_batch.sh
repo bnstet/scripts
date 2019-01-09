@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --partition=cpu_short
 #SBATCH --job-name=caiman_mc
-#SBATCH --mem=20GB
+#SBATCH --mem=10GB
 #SBATCH --time=0-01:00:00
 #SBATCH --tasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --nodes=1
-#SBATCH --array=0-10
+#SBATCH --array=0-35
 #SBATCH -o logs/mc_%A_%j_%a.log
 #SBATCH -e logs/mc_%A_%j_%a.log
 #SBATCH --mail-type=ALL,ARRAY_TASKS
