@@ -1,6 +1,12 @@
-import numpy as numpy
+import numpy as np
 import caiman as cm
 import tifffile as tif
+
+from caiman.source_extraction.cnmf import cnmf as cnmf
+from caiman.source_extraction.cnmf import params as params
+from caiman.utils.visualization import plot_contours
+
+import matplotlib.pyplot as plt
 
 import os
 import sys
@@ -15,10 +21,71 @@ import argparse
 parser = argparse.ArgumentParser(description='Utilize CaImAn hdf5 analysis output to produce summary images and masks')
 parser.add_argument('infile', type=str, nargs=1, help='input hdf5 file')
 parser.add_argument('outdir',type=str, nargs=1, help='directory in which to store outputs')
+parser.add_argument('--online', action='store_true', help='use to indicate that data is coming from the caiman online (ONACID) algorithm')
+parser.add_argument('--nsources', type=int, nargs=1, default=20, help='number of neuronal regions for masks (ranked by decreasing signal stddev)')
+parser.add_argument('--maskthresh', type=float, nargs=1, default=.75, help='threshold for masks (lower threshold increases the area)')
 
 args = parser.parse_args()
 
-infile = args.infile[0]
-outdir = args.outdir[0]
+hdf5File = args.infile[0]
+outDir = args.outdir[0].replace('\\', '/')
+online = args.online
+nSources = args.nsources
+maskThresh = args.maskthresh
 
-print(infile, outdir)
+
+inBasename, _ = os.path.splitext(os.path.basename(hdf5File))
+outArrayFile = os.path.join(outDir, inBasename) + '_caiman_arrays.npz'
+outImageFolder = os.path.join(outDir, inBasename + '_images')
+
+
+
+# load in data
+
+if args.online:
+    cnm = cnmf.online_cnmf.load_OnlineCNMF(hdf5File)
+else:
+    cnm = cnmf.load_CNMF(hdf5File)
+
+if len(cnm.estimates.dims)==1:
+    cnm.estimates.dims = cnm.estimates.dims*2
+
+A, C, b, f = tp.cellInfoCaimanHdf5(hdf5File)
+
+meanImageSources = np.tensordot(C.mean(axis=0), A, axes=(0,0)).transpose().astype('float32')
+meanImage = meanImageSources + np.tensordot(f.mean(axis=0), b, axes=(0,0)).transpose().astype('float32')
+
+stdImageSources = np.tensordot(C.std(axis=0), A, axes=(0,0)).transpose().astype('float32')
+stdImage = stdImageSources + np.tensordot(f.std(axis=0), b, axes=(0,0)).transpose().astype('float32')
+
+
+# get top sources for consideration
+stdSources = (C.std(axis=0))*(A.max(axis=(-1,-2)))
+topRanks = np.argsort(stdSources)[-nSources:]
+
+
+# create quantile-based threshold masks for top sources
+topPixels = A[topRanks].reshape(A[topRanks].shape[0],-1)
+maskQuantiles = np.array([ np.quantile(x[x>0], maskThresh) for x in topPixels] ).reshape((len(topRanks),1,1))
+masks = A[topRanks] > maskQuantiles
+
+# get df/f traces for top sources
+df_f = cnm.estimates.F_dff[topRanks]
+
+# get background
+bg = np.tensordot(f.std(axis=0), b, axes=(0,0)).transpose().astype('float32')
+
+
+np.savez(outArrayFile, masks=masks, df_f=df_f, bg=bg)
+
+if not os.path.exists(outDir):
+    os.mkdir(outDir)
+
+if not os.path.exists(outImageFolder):
+    os.mkdir(outImageFolder)
+
+tif.imsave(os.path.join(outImageFolder, 'meanImageSources.tiff'), meanImageSources, imagej=True)
+tif.imsave(os.path.join(outImageFolder, 'meanImage.tiff'), meanImage, imagej=True)
+tif.imsave(os.path.join(outImageFolder, 'stdImageSources.tiff'), stdImageSources, imagej=True)
+tif.imsave(os.path.join(outImageFolder, 'stdImageSources.tiff'), stdImage, imagej=True)
+
