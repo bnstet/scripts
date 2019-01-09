@@ -242,7 +242,7 @@ def main():
     rf = 25                  # half-size of the patches in pixels. e.g., if rf=25, patches are 50x50
     stride_cnmf = 8          # amount of overlap between the patches in pixels
     K = 4                    # number of components per patch
-    gSig = [12, 12]            # expected half size of neurons in pixels
+    gSig = [10, 10]            # expected half size of neurons in pixels
     method_init = 'greedy_roi'   # initialization method (if analyzing dendritic data using 'sparse_nmf')
     ssub = 2                     # spatial subsampling during initialization
     tsub = 2                     # temporal subsampling during intialization
@@ -301,9 +301,9 @@ def main():
     #   a) the shape of each component must be correlated with the data
     #   b) a minimum peak SNR is required over the length of a transient
     #   c) each shape passes a CNN based classifier
-    min_SNR = 1.5 # signal to noise ratio for accepting a component
+    min_SNR = .75 # signal to noise ratio for accepting a component
     rval_thr = 0.7  # space correlation threshold for accepting a component
-    cnn_thr = 0.98  # threshold for CNN based classifier
+    cnn_thr = 0.97  # threshold for CNN based classifier
     cnn_lowest = 0.1 # neurons with cnn probability lower than this value are rejected
 
     cnm2.params.set('quality', {'decay_time': decay_time,
