@@ -8,9 +8,13 @@ from caiman.utils.visualization import plot_contours
 
 import matplotlib.pyplot as plt
 
+from scipy.io import savemat
+
 import os
 import sys
 import glob
+
+from PIL import Image
 
 import twop_rec_tools as tp
 
@@ -36,8 +40,14 @@ maskThresh = args.maskthresh
 
 inBasename, _ = os.path.splitext(os.path.basename(hdf5File))
 outArrayFile = os.path.join(outDir, inBasename) + '_caiman_arrays.npz'
+outMatlabFile = os.path.join(outDir, inBasename) + '_caiman_arrays.mat'
 outImageFolder = os.path.join(outDir, inBasename + '_images')
 
+
+if not os.path.exists(outDir):
+    os.mkdir(outDir)
+if not os.path.exists(outImageFolder):
+    os.mkdir(outImageFolder)
 
 
 # load in data
@@ -60,14 +70,14 @@ stdImage = stdImageSources + np.tensordot(f.std(axis=0), b, axes=(0,0)).transpos
 
 
 # get top sources for consideration
-stdSources = (C.std(axis=0))*(A.max(axis=(-1,-2)))
+stdSources = (C.std(axis=0))*(A.mean(axis=(-1,-2)))
 topRanks = np.argsort(stdSources)[-nSources:]
 
 
 # create quantile-based threshold masks for top sources
-topPixels = A[topRanks].reshape(A[topRanks].shape[0],-1)
-maskQuantiles = np.array([ np.quantile(x[x>0], maskThresh) for x in topPixels] ).reshape((len(topRanks),1,1))
-masks = A[topRanks] > maskQuantiles
+topPixels = (A[topRanks].transpose(0,2,1)).reshape(A[topRanks].shape[0],-1)
+maskQuantiles = np.array([ np.percentile(x[x>0], maskThresh) for x in topPixels] ).reshape((len(topRanks),1,1))
+masks = A[topRanks].transpose(0,2,1) > maskQuantiles
 
 # get df/f traces for top sources
 df_f = cnm.estimates.F_dff[topRanks]
@@ -75,17 +85,25 @@ df_f = cnm.estimates.F_dff[topRanks]
 # get background
 bg = np.tensordot(f.std(axis=0), b, axes=(0,0)).transpose().astype('float32')
 
+saveDict = {'masks':masks,
+            'df_f':df_f,
+            'bg':bg,
+            'A':A,
+            'C':C,
+            'b':b,
+            'f':f
+            }
 
-np.savez(outArrayFile, masks=masks, df_f=df_f, bg=bg)
+savemat(outMatlabFile, saveDict)
+np.savez(outArrayFile, **saveDict)
 
-if not os.path.exists(outDir):
-    os.mkdir(outDir)
-
-if not os.path.exists(outImageFolder):
-    os.mkdir(outImageFolder)
 
 tif.imsave(os.path.join(outImageFolder, 'meanImageSources.tiff'), meanImageSources, imagej=True)
 tif.imsave(os.path.join(outImageFolder, 'meanImage.tiff'), meanImage, imagej=True)
 tif.imsave(os.path.join(outImageFolder, 'stdImageSources.tiff'), stdImageSources, imagej=True)
-tif.imsave(os.path.join(outImageFolder, 'stdImageSources.tiff'), stdImage, imagej=True)
+tif.imsave(os.path.join(outImageFolder, 'stdImage.tiff'), stdImage, imagej=True)
 
+for i in range(len(masks)):
+    img = Image.fromarray(255*masks[i].astype('uint8'))
+    imgPath = os.path.join(outImageFolder, 'mask{0:0=03d}.png'.format(i))
+    img.save(imgPath)
