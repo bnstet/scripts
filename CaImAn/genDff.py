@@ -12,6 +12,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import sys
 import tifffile as tif
 from time import time, sleep
 
@@ -120,10 +121,10 @@ def cellInfoCaimanHdf5(hdf5File):
 
 ##########
 
-with open('mc_files.txt', 'r') as f:
+with open(sys.argv[1], 'r') as f:
     mcFileList = [x.replace('\n','') for x in f.readlines()]
 
-with open('cm_files.txt', 'r') as f:
+with open(sys.argv[2], 'r') as f:
     cmFileList = [x.replace('\n','') for x in f.readlines()]
 
 	
