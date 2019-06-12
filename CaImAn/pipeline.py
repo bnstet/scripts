@@ -246,35 +246,80 @@ n_processes = int(n_processes)
 
 # %%  parameters for source extraction and deconvolution
 p = 1                    # order of the autoregressive system
-gnb = 2                  # number of global background components
-merge_thresh = 0.8       # merging threshold, max correlation allowed
-rf = 50                  # half-size of the patches in pixels. e.g., if rf=25, patches are 50x50
+gnb = 0                  # number of global background components, if positive, otherwise ring model with settings
+# gnb=0 : return background as b and W
+# gnb=-1 : retyrb full rank background B
+# gnb<-1: don't return background
+Ain = None          # possibility to seed with predetermined binary masks
+merge_thr = 0.7       # merging threshold, max correlation allowed
+rf = 40                  # half-size of the patches in pixels. e.g., if rf=25, patches are 50x50
 stride_cnmf = 20          # amount of overlap between the patches in pixels
-K = 6                    # number of components per patch
-gSig = [7, 7]            # expected half size of neurons in pixels
-method_init = 'greedy_roi'   # initialization method (if analyzing dendritic data using 'sparse_nmf')
-#method_init = 'corr_pnr'
-ssub = 2                     # spatial subsampling during initialization
-tsub = 2                     # temporal subsampling during intialization
-center_psf=False      # set to true if there is strong background
+K = None                    # upper bound on components per patch; in general None
+gSig = [5, 5]            # gaussian width of a 2D gaussian kernel, which approximates a neuron
+gSiz = [21, 21]     # average diameter of a neuron, in general 4*gSig+1
+bord_px=20 # number of pixels to not consider in the borders)
+
+method_init = 'corr_pnr'   # initialization method (if analyzing dendritic data using 'sparse_nmf'), for standard 2p use greedy_roi, for 1p use corr_pnr
+
+
+ssub = 1                     # spatial subsampling during initialization, increase if you have memory problems
+tsub = 4                     # temporal subsampling during intialization, increase if you have memory problems
+center_psf=True      # set to true if there is strong background
+low_rank_background = None  # None leaves background of each patch intact, True performs global low-rank approximation if gnb>0
+nb_patch = 0        # number of background components (rank) per patch if gnb>0, else it is set automatically
+min_corr = .8       # min peak value from correlation image (for corr_pnr)
+min_pnr = 10        # min peak to noise ration from PNR image (for corr_pnr)
+ssub_B = 2          # additional downsampling factor in space for background (for corr_pnr)
+ring_size_factor = 1.4  # radius of ring is gSiz*ring_size_factor
+
+only_init = True # set it to True to run CNMF-E
+
+update_background_components=True # sometimes setting to False improve the results
+
+
+opts_dict={'method_init': method_init,  
+           'K': K,
+           'gSig': gSig,
+           'gSiz': gSiz,
+           'merge_thr': merge_thr,
+           'p': p,
+           'tsub': tsub,
+           'ssub': ssub,
+           'rf': rf,
+           'stride': stride_cnmf,
+           'only_init': only_init,    # set it to True to run CNMF-E
+           'nb': gnb,
+           'nb_patch': nb_patch,
+           'method_deconvolution': 'oasis',       # could use 'cvxpy' alternatively
+           'low_rank_background': low_rank_background,
+           'update_background_components': True,  # sometimes setting to False improve the results
+           'min_corr': min_corr,
+           'min_pnr': min_pnr,
+           'normalize_init': False,               # just leave as is
+           'center_psf': center_psf,   
+           'ssub_B': ssub_B,
+           'ring_size_factor': ring_size_factor,
+           'del_duplicates': True,                # whether to remove duplicates from initialization
+           'border_pix': bord_px}            
+
 
 # parameters for component evaluation
-opts_dict = {'fnames': fnames,
-             'fr': fr,
-             'nb': gnb,
-             'rf': rf,
-             'K': K,
-             'gSig': gSig,
-             'stride': stride_cnmf,
-             'method_init': method_init,
-             'rolling_sum': True,
-             'merge_thr': merge_thresh,
-             'n_processes': n_processes,
-             'only_init': True,
-             'ssub': ssub,
-             'tsub': tsub,
-             'center_psf':center_psf
-         }
+#opts_dict = {'fnames': fnames,
+#             'fr': fr,
+#             'nb': gnb,
+#             'rf': rf,
+#             'K': K,
+#             'gSig': gSig,
+#             'stride': stride_cnmf,
+#             'method_init': method_init,
+#             'rolling_sum': True,
+#             'merge_thr': merge_thresh,
+#             'n_processes': n_processes,
+#             'only_init': True,
+#             'ssub': ssub,
+#             'tsub': tsub,
+#             'center_psf':center_psf
+#         }
 
 opts.change_params(params_dict=opts_dict)
 
@@ -294,15 +339,18 @@ print('checkpoint 2: patch cnmf', flush=True)
 # First extract spatial and temporal components on patches and combine them
 # for this step deconvolution is turned off (p=0)
 
-opts.set('temporal', {'p': 0})
-cnm = cnmf.CNMF(n_processes, params=opts, dview=dview)
-cnm = cnm.fit(images)
+if not only_init:
+    opts.set('temporal', {'p': 0})
+    cnm = cnmf.CNMF(n_processes, params=opts, Ain=Ain, dview=dview)
+    cnm = cnm.fit(images)
 
 
-# %% RE-RUN seeded CNMF on accepted patches to refine and perform deconvolution
-cnm.params.set('temporal', {'p': p})
-cnm2 = cnm.refit(images, dview=dview)
-
+    # %% RE-RUN seeded CNMF on accepted patches to refine and perform deconvolution
+    cnm.params.set('temporal', {'p': p})
+    cnm2 = cnm.refit(images, dview=dview)
+else:
+    cnm2 = cnmf.CNMF(n_processes, params=opts, Ain=Ain, dview=dview)
+    cnm2.fit(images)
 
 
 print('checkpoint 3: eval components', flush=True)
@@ -314,25 +362,27 @@ print('checkpoint 3: eval components', flush=True)
 #   b) a minimum peak SNR is required over the length of a transient
 #   c) each shape passes a CNN based classifier
 min_SNR = 1 # signal to noise ratio for accepting a component
-rval_thr = 0.7  # space correlation threshold for accepting a component
+rval_thr = 0.7  # space correlation threshold for accepting a component; lower -> more components accepted
+use_cnn = False # use CNN classifier on spatial components
 cnn_thr = 0.99  # threshold for CNN based classifier
 cnn_lowest = 0.1 # neurons with cnn probability lower than this value are rejected
 
 cnm2.params.set('quality', {'decay_time': decay_time,
                             'min_SNR': min_SNR,
                             'rval_thr': rval_thr,
-                            'use_cnn': True,
+                            'use_cnn': use_cnn,
                             'min_cnn_thr': cnn_thr,
                             'cnn_lowest': cnn_lowest})
 cnm2.estimates.evaluate_components(images, cnm2.params, dview=dview)
 
+#%% Extract DF/F values
+if cnm2.estimates.b is not None:
+    cnm2.estimates.detrend_df_f(quantileMin=8, frames_window=250)
 
     
 #%% update object with selected components
 cnm2.estimates.select_components(use_object=True)
 
-#%% Extract DF/F values
-cnm2.estimates.detrend_df_f(quantileMin=8, frames_window=250)
 
     
 print('checkpoint 4: save', flush=True)
