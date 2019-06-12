@@ -26,8 +26,8 @@ parser = argparse.ArgumentParser(description='Utilize CaImAn hdf5 analysis outpu
 parser.add_argument('infile', type=str, nargs=1, help='input hdf5 file')
 parser.add_argument('outdir',type=str, nargs=1, help='directory in which to store outputs')
 parser.add_argument('--online', action='store_true', help='use to indicate that data is coming from the caiman online (ONACID) algorithm')
-parser.add_argument('--nsources', type=int, nargs=1, default=20, help='number of neuronal regions for masks (ranked by decreasing signal stddev)')
-parser.add_argument('--maskthresh', type=float, nargs=1, default=.75, help='threshold for masks (lower threshold increases the area)')
+parser.add_argument('--nsources', type=int, default=20, help='number of neuronal regions for masks (ranked by decreasing signal stddev)')
+parser.add_argument('--maskthresh', type=float, default=.75, help='threshold for masks (lower threshold increases the area)')
 
 args = parser.parse_args()
 
@@ -79,8 +79,11 @@ topPixels = (A[topRanks].transpose(0,2,1)).reshape(A[topRanks].shape[0],-1)
 maskQuantiles = np.array([ np.percentile(x[x>0], maskThresh) for x in topPixels] ).reshape((len(topRanks),1,1))
 masks = A[topRanks].transpose(0,2,1) > maskQuantiles
 
-# get df/f traces for top sources
-df_f = cnm.estimates.F_dff[topRanks]
+# get df/f traces
+df_f = cnm.estimates.F_dff
+
+# get spikes
+S = cnm.estimates.S
 
 # get background
 bg = np.tensordot(f.std(axis=0), b, axes=(0,0)).transpose().astype('float32')
@@ -91,7 +94,9 @@ saveDict = {'masks':masks,
             'A':A,
             'C':C,
             'b':b,
-            'f':f
+            'f':f,
+            'S':S,
+            'topRanks':topRanks
             }
 
 savemat(outMatlabFile, saveDict)

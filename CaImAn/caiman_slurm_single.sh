@@ -4,12 +4,11 @@
 #SBATCH --mem=100GB
 #SBATCH --time=0-06:00:00
 #SBATCH --tasks=1
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=10
 #SBATCH --nodes=1
-#SBATCH --array=0
-#SBATCH -o logs/caiman_%A_%j_%a.log
-#SBATCH -e logs/caiman_%A_%j_%a.log
-#SBATCH --mail-type=ALL,ARRAY_TASKS
+#SBATCH -o logs/caiman_%j.log
+#SBATCH -e logs/caiman_%j.log
+#SBATCH --mail-type=ALL
 #SBATCH --mail-user=stetlb01@nyulangone.org
 
 
@@ -26,14 +25,14 @@ export MKL_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 
 
-finallog=logs/final_log_"$SLURM_ARRAY_JOB_ID".txt
-printf "$(date)  Task $SLURM_ARRAY_TASK_ID starting analysis of $invid \n" >> $finallog
+finallog=logs/final_log_"$SLURM_JOB_ID".txt
+printf "$(date)  Task $SLURM_JOB_ID starting analysis of $invid \n" >> $finallog
 
 
-python pipeline.py $invid $outfile --slurmid $SLURM_ARRAY_TASK_ID
+python pipeline.py "$@" --slurmid $SLURM_JOB_ID
 rc=$?
-if [[ $rc != 0 ]]; then printf "$(date)  Task $SLURM_ARRAY_TASK_ID failed with exit code $rc \n" >> $finallog; exit $rc; fi
-printf "$(date)  Task $SLURM_ARRAY_TASK_ID completed \n" >> $finallog
+if [[ $rc != 0 ]]; then printf "$(date)  Task $SLURM_JOB_ID failed with exit code $rc \n" >> $finallog; exit $rc; fi
+printf "$(date)  Task $SLURM_JOB_ID completed \n" >> $finallog
 
 exit
 

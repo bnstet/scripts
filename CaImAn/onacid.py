@@ -54,7 +54,7 @@ def main():
     decay_time = 0.4  # approximate length of transient event in seconds
     gSig = (8, 8)  # expected half size of neurons
     p = 1  # order of AR indicator dynamics
-    min_SNR = 2   # minimum SNR for accepting new components
+    min_SNR = 1   # minimum SNR for accepting new components
     ds_factor = 1  # spatial downsampling factor (increases speed but may lose some fine structure)
     gnb = 2  # number of background components
     gSig = tuple(np.ceil(np.array(gSig) / ds_factor).astype('int')) # recompute gSig if downsampling is involved

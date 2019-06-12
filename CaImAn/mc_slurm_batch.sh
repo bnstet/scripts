@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --partition=cpu_short
 #SBATCH --job-name=caiman_mc
-#SBATCH --mem=10GB
+#SBATCH --mem=20GB
 #SBATCH --time=0-01:00:00
 #SBATCH --tasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --nodes=1
-#SBATCH --array=0-10
+#SBATCH --array=0-130
 #SBATCH -o logs/mc_%A_%j_%a.log
 #SBATCH -e logs/mc_%A_%j_%a.log
 #SBATCH --mail-type=ALL,ARRAY_TASKS
@@ -49,7 +49,8 @@ finallog=logs/final_log_"$SLURM_ARRAY_JOB_ID".txt
 printf "$(date)  Task $SLURM_ARRAY_TASK_ID starting analysis of $vid \n" >> $finallog
 
 
-python motion_correct_only.py $vid
+
+python motion_correct_only.py $vid 
 rc=$?
 if [[ $rc != 0 ]]; then printf "$(date)  Task $SLURM_ARRAY_TASK_ID failed with exit code $rc \n" >> $finallog; exit $rc; fi
 printf "$(date)  Task $SLURM_ARRAY_TASK_ID completed \n" >> $finallog
