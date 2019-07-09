@@ -20,6 +20,7 @@ authors: @agiovann and @epnev
 import cv2
 import glob
 import logging
+import matplotlib; matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -46,8 +47,10 @@ import caiman as cm
 from caiman.motion_correction import MotionCorrect
 from caiman.source_extraction.cnmf import cnmf as cnmf
 from caiman.source_extraction.cnmf import params as params
-from caiman.utils.utils import download_demo
 
+import yaml
+
+from scipy.io import loadmat
 
 
 parser = argparse.ArgumentParser(description='Execute the CaImAn (Calcium Imaging Analysis) pipeline on a video recording (.tif file or .tiff stack). Motion correct, determine neuronal regions, extract signals and denoise.')
@@ -60,6 +63,8 @@ parser.add_argument('--log_fname', type=str, nargs='?', default="logs/caiman_pro
 parser.add_argument('--mc_fname', type=str, nargs='?', default="", help='file name under which to save motion-corrected video. leave out to not save (default behavior)')
 parser.add_argument('--nomc', action='store_true', help='if used, then no motion correction will be run on the input video/mmap file')
 parser.add_argument('--slurmid', type=int, nargs='?', default=0, help='slurm ID for multi-node processing. leave out to default to 0')
+parser.add_argument('--Ainfile',type=str, nargs=1, default=None, help='optional file for input masks. should either be .mat or .npy file containing a(n_masks)x(dim_1)x(dim_2) array of masks called "Ain"' )
+parser.add_argument('--settingsFile', nargs=1, default='settings/caiman_settings_default.yml', help='YAML file containing CaImAn model parameters')
 
 args = vars(parser.parse_args())
 
@@ -70,6 +75,36 @@ log_fname = args['log_fname']
 mc_fname = args['mc_fname']
 nomc = args['nomc']
 slurmid = args['slurmid']
+
+# handle settings file
+settingsFile = args['settingsFile']
+if type(settingsFile) is list:
+    settingsFile = settingsFile[0]
+if not os.path.isfile(settingsFile):
+    raise FileNotFoundError('settingsFile {} not found!'.format(settingsFile))
+try:
+    settingsFileDict = yaml.safe_load(open(settingsFile, 'r'))
+except yaml.YAMLError as exc:
+    print('Error parsing YAML settingsFile {} : {}'.format(settingsFile,exc))
+    raise exc
+
+
+# handle Afile (input mask file)
+Ainfile = args['Ainfile']
+if Ainfile is not None:
+    if type(Ainfile) is list:
+        Ainfile = Ainfile[0]
+    if '.mat' in Ainfile:
+        Ahandle = loadmat(Ainfile)
+        Ain = np.squeeze(Ahandle['Ain'])
+    elif ('.npy' in Ainfile) or ('.npz' in Ainfile):
+        Ahandle = np.load(Ainfile)
+        Ain = np.squeeze(Ahandle['Ain'])
+    else:
+        raise Exception('Ainfile argument must point to a .mat, .npy, or .npz file')
+else:
+    Ain = None
+
 
 splitlog = log_fname.split('.')
 head = str.join('.',splitlog[:-1])
@@ -182,10 +217,8 @@ mc_dict = {
     'border_nan': 'min'
 }
 
-opts = params.CNMFParams(params_dict=mc_dict)
-
-
-
+#opts = params.CNMFParams(params_dict=mc_dict)
+opts = params.CNMFParams(params_dict=settingsFileDict)
 
     
 # %% start a cluster for parallel processing
@@ -246,33 +279,33 @@ n_processes = int(n_processes)
 
 # %%  parameters for source extraction and deconvolution
 p = 1                    # order of the autoregressive system
-gnb = 0                  # number of global background components, if positive, otherwise ring model with settings
+gnb = 2                  # number of global background components, if positive, otherwise ring model with settings
 # gnb=0 : return background as b and W
 # gnb=-1 : retyrb full rank background B
 # gnb<-1: don't return background
-Ain = None          # possibility to seed with predetermined binary masks
+#Ain = None          # possibility to seed with predetermined binary masks
 merge_thr = 0.7       # merging threshold, max correlation allowed
 rf = 40                  # half-size of the patches in pixels. e.g., if rf=25, patches are 50x50
 stride_cnmf = 20          # amount of overlap between the patches in pixels
-K = None                    # upper bound on components per patch; in general None
+K = 8                    # upper bound on components per patch
 gSig = [5, 5]            # gaussian width of a 2D gaussian kernel, which approximates a neuron
 gSiz = [21, 21]     # average diameter of a neuron, in general 4*gSig+1
 bord_px=20 # number of pixels to not consider in the borders)
 
-method_init = 'corr_pnr'   # initialization method (if analyzing dendritic data using 'sparse_nmf'), for standard 2p use greedy_roi, for 1p use corr_pnr
+method_init = 'greedy_roi'   # initialization method (if analyzing dendritic data using 'sparse_nmf'), for standard 2p use greedy_roi, for 1p use corr_pnr
 
 
 ssub = 1                     # spatial subsampling during initialization, increase if you have memory problems
-tsub = 4                     # temporal subsampling during intialization, increase if you have memory problems
-center_psf=True      # set to true if there is strong background
-low_rank_background = None  # None leaves background of each patch intact, True performs global low-rank approximation if gnb>0
-nb_patch = 0        # number of background components (rank) per patch if gnb>0, else it is set automatically
-min_corr = .8       # min peak value from correlation image (for corr_pnr)
-min_pnr = 10        # min peak to noise ration from PNR image (for corr_pnr)
+tsub = 2                     # temporal subsampling during intialization, increase if you have memory problems
+center_psf=False      # set to true if there is strong background
+low_rank_background = True  # None leaves background of each patch intact, True performs global low-rank approximation if gnb>0
+nb_patch = 1        # number of background components (rank) per patch if gnb>0, else it is set automatically (default 1)
+min_corr = .6       # min peak value from correlation image (for corr_pnr)
+min_pnr = 6        # min peak to noise ration from PNR image (for corr_pnr)
 ssub_B = 2          # additional downsampling factor in space for background (for corr_pnr)
 ring_size_factor = 1.4  # radius of ring is gSiz*ring_size_factor
 
-only_init = True # set it to True to run CNMF-E
+only_init = True 
 
 update_background_components=True # sometimes setting to False improve the results
 
@@ -321,7 +354,7 @@ opts_dict={'method_init': method_init,
 #             'center_psf':center_psf
 #         }
 
-opts.change_params(params_dict=opts_dict)
+#opts.change_params(params_dict=opts_dict)
 
 
 print('checkpoint 2: patch cnmf', flush=True)
@@ -339,16 +372,17 @@ print('checkpoint 2: patch cnmf', flush=True)
 # First extract spatial and temporal components on patches and combine them
 # for this step deconvolution is turned off (p=0)
 
-if not only_init:
-    opts.set('temporal', {'p': 0})
+
+if method_init is "greedy_roi": # standard case
+    opts.change_params( {'p': 0})
     cnm = cnmf.CNMF(n_processes, params=opts, Ain=Ain, dview=dview)
     cnm = cnm.fit(images)
 
 
     # %% RE-RUN seeded CNMF on accepted patches to refine and perform deconvolution
-    cnm.params.set('temporal', {'p': p})
+    cnm.params.change_params( {'p': p})
     cnm2 = cnm.refit(images, dview=dview)
-else:
+else: # cnmf-E case
     cnm2 = cnmf.CNMF(n_processes, params=opts, Ain=Ain, dview=dview)
     cnm2.fit(images)
 
@@ -363,16 +397,16 @@ print('checkpoint 3: eval components', flush=True)
 #   c) each shape passes a CNN based classifier
 min_SNR = 1 # signal to noise ratio for accepting a component
 rval_thr = 0.7  # space correlation threshold for accepting a component; lower -> more components accepted
-use_cnn = False # use CNN classifier on spatial components
+use_cnn = True # use CNN classifier on spatial components
 cnn_thr = 0.99  # threshold for CNN based classifier
 cnn_lowest = 0.1 # neurons with cnn probability lower than this value are rejected
 
-cnm2.params.set('quality', {'decay_time': decay_time,
-                            'min_SNR': min_SNR,
-                            'rval_thr': rval_thr,
-                            'use_cnn': use_cnn,
-                            'min_cnn_thr': cnn_thr,
-                            'cnn_lowest': cnn_lowest})
+#cnm2.params.set('quality', {'decay_time': decay_time,
+#                            'min_SNR': min_SNR,
+#                            'rval_thr': rval_thr,
+#                            'use_cnn': use_cnn,
+#                            'min_cnn_thr': cnn_thr,
+#                            'cnn_lowest': cnn_lowest})
 cnm2.estimates.evaluate_components(images, cnm2.params, dview=dview)
 
 #%% Extract DF/F values
@@ -381,7 +415,7 @@ if cnm2.estimates.b is not None:
 
     
 #%% update object with selected components
-cnm2.estimates.select_components(use_object=True)
+#cnm2.estimates.select_components(use_object=True)
 
 
     
@@ -397,7 +431,4 @@ cm.stop_server(dview=dview)
 #    os.remove(log_file)
 
 print('checkpoint 5: final', flush=True)
-
-
-
 

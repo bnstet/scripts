@@ -65,16 +65,9 @@ elif os.path.isdir(infile[0]):
     if not os.path.isfile(tmpMovPath):
         tfiles = glob.glob( os.path.join(infile[0], '*.tiff')) + glob.glob( os.path.join(infile[0], '*.tif'))
         tfiles = sorted(list(set(tfiles)))
-        with tif.TiffWriter(tmpMovPath, bigtiff=True) as writer:
-            for i in range(len(tfiles)):
-                if (i%100) == 0:
-                    print("Writing movie to temp file, frame {}/{}".format(i,len(tfiles)))
-                im = tif.imread(tfiles[i]).astype('float16')
-                if len(im.shape)==2:
-                    writer.save(im , contiguous=True, compress=6, photometric='minisblack')
-                else:
-                    for j in range(len(im)):
-                        writer.save(im[j], contiguous=True, compress=6, photometric='minisblack')
+        tmpmov = cm.load_movie_chain(tfiles)
+        tmpmov.save(tmpMovPath)
+        del tmpmov
     fname = [tmpMovPath]
 else:
     tmpMovPath = None
@@ -184,6 +177,9 @@ def main():
     else:
         mmap_files = mc.fname_tot_rig
 
+    # delete mc object
+    del mc
+    
     print('mmap file list: {}'.format(mmap_files), flush=True)
 
     for n,mmap_file in enumerate(mmap_files):
@@ -205,13 +201,19 @@ def main():
             for i in range(len(mov)):
                 frame = mov[i]
                 frame_file = os.path.join(outfile[n], 'frame{:06d}.tiff'.format(i))
-                tif.imsave(frame_file, frame, imagej=True)
+                tif.imsave(frame_file, frame.astype('float32'), imagej=True)
     
+
+    # remove all temp mmap files and temp tif files
     print('Save complete. Removing temporary files.', flush=True)
 
     if tmpMovPath is not None:
         os.remove(tmpMovPath)
-    [os.remove(x) for x in mmap_files];
+    rem = [os.remove(x) for x in mmap_files];
+    if isinstance(fname_new, list):
+        remnew = [os.remove(x) for x in fname_new]
+    else:
+        remnew = os.remove(fname_new)
 
 
     print('Motion correction script complete.', flush=True)
