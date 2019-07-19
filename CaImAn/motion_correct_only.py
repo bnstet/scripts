@@ -43,14 +43,16 @@ parser = argparse.ArgumentParser(description='Execute the CaImAn (Calcium Imagin
 parser.add_argument('infile', type=str, nargs=1, help='file name (for .tif file) or folder (for .tiff stack)')
 parser.add_argument('--outfile',type=str, nargs=1, default=[], help='file name under which to store the output motion correction movie')
 parser.add_argument('--mc_temp',type=str, nargs='?', default=None, help='template .tif file for motion correction')
+parser.add_argument('--jobid',type=int, nargs=1, default=0, help='integer tag to help separate simultaneous jobs; e.g. can be the slurm job id ')
+
 args = vars(parser.parse_args())
 
 infile = args['infile']
 outfile = args['outfile']
 mc_temp = args['mc_temp']
+jobid = args['jobid']
 
 print('Using arguments list: {}'.format(args))
-
 orig_in = infile[0]
 
 
@@ -183,8 +185,7 @@ def main():
     print('mmap file list: {}'.format(mmap_files), flush=True)
 
     for n,mmap_file in enumerate(mmap_files):
-        fname_new = cm.save_memmap([mmap_file], base_name='memmap_{}_'.format(n), order='C',border_to_0=border_to_0)
-    
+        fname_new = cm.save_memmap([mmap_file], base_name='memmap_{}_{}'.format(n,jobid), order='C',border_to_0=border_to_0)
         (mov, frame_dims, num_frames) = cm.load_memmap(fname_new)
         mov = mov.reshape( list(frame_dims) + [num_frames]).transpose((2,1,0))
         mov = mov[channelToKeep::nChannels]

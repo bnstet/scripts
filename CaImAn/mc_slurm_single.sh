@@ -28,7 +28,7 @@ printf "$(date)  Task $SLURM_ARRAY_JOB_ID starting analysis of $vid \n" >> $fina
 
 
 
-python motion_correct_only.py "$@"
+python motion_correct_only.py "$@" --jobid $SLURM_JOB_ID
 rc=$?
 if [[ $rc != 0 ]]; then printf "$(date)  Task $SLURM_JOB_TASK_ID failed with exit code $rc \n" >> $finallog; exit $rc; fi
 printf "$(date)  Task $SLURM_ARRAY_JOB_ID completed \n" >> $finallog
