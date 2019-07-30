@@ -18,11 +18,13 @@ module load matlab/R2018a
 ## tifs (2nd arg, mapped into list form): text file containing video file names (just the file names, no parent directories!)
 ## template (3rd arg): alignment template (file name only)
 ## redchannel (4th arg): 0 for no red channel in the input, 1 for red channel in the input (dropped in the output in all cases)
+## replace (5th arg): 1 to replace existing output file, 0 otherwise
 
 vid_dir=$1
 mapfile -t tifs < $2
 template=$3
 redchannel=$4
+replace=$5
 
 cd $vid_dir
 
@@ -37,7 +39,7 @@ tif=${tifs[$SLURM_ARRAY_TASK_ID]}
 
 {
   echo $tif
-  matlab -nodisplay -r "addpath('/gpfs/home/stetlb01/scripts');normcorremotioncorrection('$tif','$template',$redchannel);exit"
+  matlab -nodisplay -r "addpath('/gpfs/home/stetlb01/scripts');normcorremotioncorrection('$tif','$template',$redchannel,$replace);exit"
      }  2>&1
 
 exit

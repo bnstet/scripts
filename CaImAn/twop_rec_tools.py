@@ -72,9 +72,12 @@ def loadNeurofinderRegions(nfFolder):
     return masks
 
 
-def cellInfoCaimanHdf5(hdf5File):
+def cellInfoCaimanHdf5(hdf5File, dims=None):
     """
     Given a CaImAn output .hdf5 file, returns the spatial cell profiles, cell signal traces, and background profiles and traces
+    Input:
+    hdf5File: input file containing CaImAn saved cnmf model
+    dims: optional; spatial dimensions of video
     Output:
     (cellProfs, signalTraces, bgProfs, bgTraces)
     cellProfs is a numCells x xDim x yDim array of spatial cell profiles
@@ -95,7 +98,9 @@ def cellInfoCaimanHdf5(hdf5File):
         Ashape = np.array(Ainfo['shape'])
         A = csc_matrix((Adata,Aindices,Aindptr) , shape=Ashape ).transpose()
         A = np.array(A.todense())
-        cellProfs = A.reshape((A.shape[0],np.array(est['dims'])[0] ,-1))
+        if dims is None:
+            dims = np.array(est['dims'])
+        cellProfs = A.reshape((A.shape[0],dims[0] ,-1))
         f = np.array(est['f']).transpose()
         b = np.array(est['b']).transpose()
         b = b.reshape(b.shape[0],cellProfs.shape[1],cellProfs.shape[2])

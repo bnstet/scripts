@@ -33,7 +33,6 @@ python pipeline.py "$@" --slurmid $SLURM_JOB_ID
 rc=$?
 if [[ $rc != 0 ]]; then printf "$(date)  Task $SLURM_JOB_ID failed with exit code $rc \n" >> $finallog; exit $rc; fi
 printf "$(date)  Task $SLURM_JOB_ID completed \n" >> $finallog
-
 exit
 
 
