@@ -1,0 +1,30 @@
+Common commands used when running the pipeline
+
+# motion correct videos
+# normcorre
+sbatch scripts/run_normcorre_mc.sh /gpfs/data/shohamlab/shared_data/jon_2p_data/JG1224/190521/ JG1224_190521_orig_final.txt Ref.tif 1
+# caiman normcorre (given that ref files are appropriately placed; adjust filters for given use case)
+for ref in $(cat textFiles/yi_new_refs.txt); do parentDir=$(dirname $ref);for mcdir in $(find $parentDir -maxdepth 1 -type d | grep MPA); sbatch mc_slurm_single.sh $mcdir --mc_temp $ref; done; done
+
+
+# send get aligned videos from ./aligned/$num folders and send to text files
+mouse=JG1221; mdate=190515;basedir=/gpfs/data/shohamlab/shared_data/jon_2p_data/$mouse/$mdate;
+for f in $(find $basedir/aligned -maxdepth 1 -mindepth 1 -type d | grep -v filtered); do topdir=$(basename $f); echo $f; readlink -f $f/* | grep -v filtered  | sort > ~/scripts/CaImAn/textFiles/${mouse}_${mdate}_${topdir}_mc.txt; done
+
+# filter mc'ed videos, removing excess channels and filtering out stim frames (add line generating text file)
+for f in $(find textFiles/ -name "*JG1221*" | grep mc); do sbatch caiman_preprocessing.sh $f; echo $f; done
+
+
+# move filtered vids to appropriate folders
+cd ./aligned
+for mydir in $(find . -maxdepth 1 -mindepth 1 -type d | grep -v  filtered ); do mydirbase=$(basename $mydir); mkdir ${mydirbase}_filtered; done
+for mydir in $(find . -maxdepth 1 -mindepth 1 -type d | grep -v  filtered ); do mydirbase=$(basename $mydir); find $mydir | grep filtered  | xargs -Isub mv sub ${mydirbase}_filtered/ ; done
+
+
+# run caiman after populating the "aligned" folder with subfolders of filtered videos
+# add or remove --nomc flag as appropriate
+mouse=JG1224;ddate=190521;startdir=/gpfs/data/shohamlab/shared_data/jon_2p_data/$mouse/$ddate; for d in $(find $startdir/aligned -maxdepth 1 -name "*filtered"); do tag=$(basename $d); txtFile=textFiles/${mouse}_${ddate}_${tag}.txt; find $d -name "*.tif" | sort > $txtFile; sbatch caiman_slurm_single.sh $txtFile $startdir/analysis/${tag}_caiman_out.hdf5 --nomc; done
+
+
+# run caiman postprocessing to generate masks, numpy and matlab output files
+mouse=JG1224; date=190521;startDir=/gpfs/data/shohamlab/shared_data/jon_2p_data/$mouse/$date/; for f in $(find $startDir/analysis -name "*.hdf5" | grep "caiman" ); do echo "Starting file $f"; python caiman_postprocessing.py $f $startDir/analysis/ --nsources 40; done

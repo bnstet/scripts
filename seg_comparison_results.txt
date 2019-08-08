@@ -1,0 +1,96 @@
+Scoring info for dataset 0: 
+Caiman data location: /gpfs/home/stetlb01/scripts/CaImAn/results/caiman_analysis_0.hdf5
+Suite2p data location: /gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/0/F_237405_0_plane1.mat
+Neurofinder data location: /gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.00/
+Method: caiman/S2p/IOU  Score:   0.0683
+Method: caiman/NF/IOU  Score:   0.1501
+Method: S2p/NF/IOU  Score:   0.0476
+Method: caiman/S2p/Corr  Score:   0.0149
+Method: caiman/NF/Corr  Score:   0.2690
+Method: S2p/NF/Corr  Score:   0.0156
+
+
+Scoring info for dataset 1: 
+Caiman data location: /gpfs/home/stetlb01/scripts/CaImAn/results/caiman_analysis_1.hdf5
+Suite2p data location: /gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/1/F_237405_1_plane1.mat
+Neurofinder data location: /gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.01/
+Method: caiman/S2p/IOU  Score:   0.2350
+Method: caiman/NF/IOU  Score:   0.1532
+Method: S2p/NF/IOU  Score:   0.2253
+Method: caiman/S2p/Corr  Score:   0.5233
+Method: caiman/NF/Corr  Score:   0.2919
+Method: S2p/NF/Corr  Score:   0.3082
+
+
+Scoring info for dataset 2: 
+Caiman data location: /gpfs/home/stetlb01/scripts/CaImAn/results/caiman_analysis_2.hdf5
+Suite2p data location: /gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/2/F_237405_2_plane1.mat
+Neurofinder data location: /gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.02/
+Method: caiman/S2p/IOU  Score:   0.1953
+Method: caiman/NF/IOU  Score:   0.1177
+Method: S2p/NF/IOU  Score:   0.1899
+Method: caiman/S2p/Corr  Score:   0.4180
+Method: caiman/NF/Corr  Score:   0.1892
+Method: S2p/NF/Corr  Score:   0.2535
+
+
+Scoring info for dataset 3: 
+Caiman data location: /gpfs/home/stetlb01/scripts/CaImAn/results/caiman_analysis_3.hdf5
+Suite2p data location: /gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/3/F_237405_3_plane1.mat
+Neurofinder data location: /gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.00.03/
+Method: caiman/S2p/IOU  Score:   0.1957
+Method: caiman/NF/IOU  Score:   0.1270
+Method: S2p/NF/IOU  Score:   0.2294
+Method: caiman/S2p/Corr  Score:   0.3913
+Method: caiman/NF/Corr  Score:   0.2095
+Method: S2p/NF/Corr  Score:   0.3084
+
+
+Scoring info for dataset 4: 
+Caiman data location: /gpfs/home/stetlb01/scripts/CaImAn/results/caiman_analysis_4.hdf5
+Suite2p data location: /gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/4/F_237405_4_plane1.mat
+Neurofinder data location: /gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.01.00/
+Method: caiman/S2p/IOU  Score:   0.1725
+Method: caiman/NF/IOU  Score:   0.1687
+Method: S2p/NF/IOU  Score:   0.3959
+Method: caiman/S2p/Corr  Score:   0.3048
+Method: caiman/NF/Corr  Score:   0.2826
+Method: S2p/NF/Corr  Score:   0.4602
+
+
+Scoring info for dataset 5: 
+Caiman data location: /gpfs/home/stetlb01/scripts/CaImAn/results/caiman_analysis_5.hdf5
+Suite2p data location: /gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/5/F_237405_5_plane1.mat
+Neurofinder data location: /gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.02.00/
+Method: caiman/S2p/IOU  Score:   0.2618
+Method: caiman/NF/IOU  Score:   0.2313
+Method: S2p/NF/IOU  Score:   0.3605
+Method: caiman/S2p/Corr  Score:   0.5178
+Method: caiman/NF/Corr  Score:   0.5816
+Method: S2p/NF/Corr  Score:   0.5007
+
+
+Scoring info for dataset 6: 
+Caiman data location: /gpfs/home/stetlb01/scripts/CaImAn/results/caiman_analysis_6.hdf5
+Suite2p data location: /gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/6/F_237405_6_plane1.mat
+Neurofinder data location: /gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.03.00/
+Method: caiman/S2p/IOU  Score:   0.0985
+Method: caiman/NF/IOU  Score:   0.1589
+Method: S2p/NF/IOU  Score:   0.0650
+Method: caiman/S2p/Corr  Score:   0.1661
+Method: caiman/NF/Corr  Score:  -0.0112
+Method: S2p/NF/Corr  Score:  -0.0104
+
+
+Scoring info for dataset 7: 
+Caiman data location: /gpfs/home/stetlb01/scripts/CaImAn/results/caiman_analysis_7.hdf5
+Suite2p data location: /gpfs/data/shohamlab/ben/segmentation_project/Segmentation_Packages/suite2p_settings/results/237405/7/F_237405_7_plane1.mat
+Neurofinder data location: /gpfs/data/shohamlab/ben/segmentation_project/neurofinder/data/neurofinder.04.00/
+Method: caiman/S2p/IOU  Score:   0.1540
+Method: caiman/NF/IOU  Score:   0.1022
+Method: S2p/NF/IOU  Score:   0.1673
+Method: caiman/S2p/Corr  Score:   0.4069
+Method: caiman/NF/Corr  Score:   0.2160
+Method: S2p/NF/Corr  Score:   0.2315
+
+
