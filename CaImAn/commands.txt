@@ -2,10 +2,9 @@ Common commands used when running the pipeline
 
 # motion correct videos
 # normcorre
-sbatch scripts/run_normcorre_mc.sh /gpfs/data/shohamlab/shared_data/jon_2p_data/JG1224/190521/ JG1224_190521_orig_final.txt Ref.tif 1
+sbatch scripts/run_normcorre_mc.sh /gpfs/data/shohamlab/shared_data/jon_2p_data/JG1224/190521/ JG1224_190521_orig_final.txt Ref.tif 1 1
 # caiman normcorre (given that ref files are appropriately placed; adjust filters for given use case)
-for ref in $(cat textFiles/yi_new_refs.txt); do parentDir=$(dirname $ref);for mcdir in $(find $parentDir -maxdepth 1 -type d | grep MPA); sbatch mc_slurm_single.sh $mcdir --mc_temp $ref; done; done
-
+base_dir=/gpfs/data/shohamlab/shared_data/yi_recordings/yi_new_holder_results/PV;for ref in $(find $base_dir/PV* -name "ref.tif"); do parentDir=$(dirname ${ref});for mcdir in $(find $parentDir -maxdepth 1 -type f | grep MPA);do sbatch mc_slurm_single.sh $mcdir --mc_temp $ref; done; done
 
 # send get aligned videos from ./aligned/$num folders and send to text files
 mouse=JG1221; mdate=190515;basedir=/gpfs/data/shohamlab/shared_data/jon_2p_data/$mouse/$mdate;
