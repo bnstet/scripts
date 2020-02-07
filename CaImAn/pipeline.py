@@ -49,6 +49,7 @@ from caiman.source_extraction.cnmf import cnmf as cnmf
 from caiman.source_extraction.cnmf import params as params
 
 import yaml
+import warnings
 
 from scipy.io import loadmat
 
@@ -84,6 +85,9 @@ if not os.path.isfile(settingsFile):
     raise FileNotFoundError('settingsFile {} not found!'.format(settingsFile))
 try:
     settingsFileDict = yaml.safe_load(open(settingsFile, 'r'))
+    print('Using YAML settingsFile {}'.format(settingsFile))
+    for k,v in settingsFileDict.items():
+        print('  {} : {}'.format(k,v))
 except yaml.YAMLError as exc:
     print('Error parsing YAML settingsFile {} : {}'.format(settingsFile,exc))
     raise exc
@@ -92,6 +96,7 @@ except yaml.YAMLError as exc:
 # handle Afile (input mask file)
 Ainfile = args['Ainfile']
 if Ainfile is not None:
+    print('Loading matrix seed from Ainfile = {}'.format(Ainfile))
     if type(Ainfile) is list:
         Ainfile = Ainfile[0]
     if '.mat' in Ainfile:
@@ -102,6 +107,7 @@ if Ainfile is not None:
         Ain = np.squeeze(Ahandle['Ain'])
     else:
         raise Exception('Ainfile argument must point to a .mat, .npy, or .npz file')
+    print('Loaded matrix seed Ain of shape {}'.format(Ain.shape))
 else:
     Ain = None
 
@@ -148,16 +154,10 @@ elif os.path.isdir(infile[0]):
     if not os.path.isfile(tmpMovPath):
         tfiles = glob.glob( os.path.join(infile[0], '*.tiff')) + glob.glob( os.path.join(infile[0], '*.tif'))
         tfiles = sorted(list(set(tfiles)))
-        with tif.TiffWriter(tmpMovPath, bigtiff=True) as writer:
-            for i in range(len(tfiles)):
-                if (i%100) == 0:
-                    print("Writing movie to temp file, frame {}/{}".format(i,len(tfiles)))
-                im = tif.imread(tfiles[i])
-                if len(im.shape)==2:
-                    writer.save(im, compress=6, photometric='minisblack')
-                else:
-                    for j in range(len(im)):
-                        writer.save(im[j], compress=6, photometric='minisblack')
+        with warnings.catch_warnings():
+            tmpMov = cm.load_movie_chain(tfiles)
+        tmpMov.save(tmpMovPath)
+        del tmpMov
     fname = [tmpMovPath]
 else:
     fname = infile
@@ -374,6 +374,7 @@ print('checkpoint 2: patch cnmf', flush=True)
 
 
 if method_init is "greedy_roi": # standard case
+    p = opts.get('temporal','p')
     opts.change_params( {'p': 0})
     cnm = cnmf.CNMF(n_processes, params=opts, Ain=Ain, dview=dview)
     cnm = cnm.fit(images)
@@ -385,6 +386,7 @@ if method_init is "greedy_roi": # standard case
 else: # cnmf-E case
     cnm2 = cnmf.CNMF(n_processes, params=opts, Ain=Ain, dview=dview)
     cnm2.fit(images)
+
 
 
 print('checkpoint 3: eval components', flush=True)

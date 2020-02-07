@@ -24,7 +24,18 @@ targetf=$2
 sourcemaskdir=$3
 targetmaskdir=$4
 
+
+export SLURM_DIR=/gpfs/scratch/stetlb01/${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}
+mkdir -p $SLURM_DIR
+
+
+echo "Matlab command:  " "addpath('/gpfs/home/stetlb01/JG_Functions');addpath('/gpfs/home/stetlb01/normcorre-matlab');shift_masks('$sourcef','$targetf','$sourcemaskdir','$targetmaskdir');exit"
+
 {
     matlab -nodisplay -r "addpath('/gpfs/home/stetlb01/JG_Functions');addpath('/gpfs/home/stetlb01/normcorre-matlab');shift_masks('$sourcef','$targetf','$sourcemaskdir','$targetmaskdir');exit"
 }
+
+rm -r $SLURM_DIR
+
 exit
+

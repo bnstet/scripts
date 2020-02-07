@@ -28,6 +28,9 @@ then
 fi
 
 
+
+
+
 {
   echo $tif
   echo running command "addpath('/gpfs/home/stetlb01/scripts');addpath('/gpfs/home/stetlb01/Holography_Analysis');addpath('/gpfs/home/stetlb01/JG_Functions');run_extract_from_expt_table('$tabfile','$basedir',$SLURM_ARRAY_TASK_ID);exit"
