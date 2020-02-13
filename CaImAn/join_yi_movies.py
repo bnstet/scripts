@@ -43,7 +43,7 @@ def mov_load_func(x):
         if os.path.isdir(x):
             return load_movie_chain(sorted(glob.glob(os.path.join(x,'*.tif*'))))
         else:
-            return load_movie_chain(x)
+            return load_movie_chain([x])
 
 
 mov_list = [mov_load_func(x) for x in mov_files]
