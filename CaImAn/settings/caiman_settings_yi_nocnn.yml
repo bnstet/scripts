@@ -32,7 +32,7 @@ stride_cnmf : 15          # amount of overlap between the patches in pixels
 K : 16                    # upper bound on components per patch
 gSig : [3, 3]            # gaussian width of a 2D gaussian kernel, which approximates a neuron
 #gSiz : [11, 11]     # average diameter of a neuron, in general 4*gSig+1
-border_pix: 8 # number of pixels to not consider in the borders)
+border_pix: 20 # number of pixels to not consider in the borders)
 
 method_init : greedy_roi   # initialization method (if analyzing dendritic data using 'sparse_nmf'), for standard 2p use greedy_roi, for 1p use corr_pnr
 

@@ -4,7 +4,7 @@
 #SBATCH --mem=100GB
 #SBATCH --time=0-04:00:00
 #SBATCH --tasks=1
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=10
 #SBATCH --nodes=1
 #SBATCH -o logs/caiman_%j.log
 #SBATCH -e logs/caiman_%j.log
