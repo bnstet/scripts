@@ -110,7 +110,7 @@ def main():
 
     #%% First setup some parameters for data and motion correction
     
-    n_processes = 18
+    n_processes = 4
 
     # dataset dependent parameters
 
@@ -139,7 +139,7 @@ def main():
 
 
   # estimate minimum of movie
-    min_mov = np.min(tif.imread(fname[0]))
+    #min_mov = np.min(tif.imread(fname[0]))
 
     mc_dict = {
         'fnames': fnames,
@@ -151,8 +151,7 @@ def main():
         'strides': strides,
         'overlaps': overlaps,
         'max_deviation_rigid': max_deviation_rigid,
-        'border_nan': 'min',
-        'min_mov': min_mov
+        'border_nan': 'min'
     }
 
     opts = params.CNMFParams(params_dict=mc_dict)

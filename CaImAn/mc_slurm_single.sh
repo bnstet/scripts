@@ -4,7 +4,7 @@
 #SBATCH --mem=50GB
 #SBATCH --time=0-4:00:00
 #SBATCH --tasks=1
-#SBATCH --cpus-per-task=20
+#SBATCH --cpus-per-task=8
 #SBATCH --nodes=1
 #SBATCH -o logs/mc_%j.log
 #SBATCH -e logs/mc_%j.log

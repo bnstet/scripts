@@ -2,7 +2,7 @@
 n_processes: 12
 
 # dataset dependent parameters
-fr : 30             # imaging rate in frames per second
+fr : 10             # imaging rate in frames per second
 decay_time : 1.5    # length of a typical transient in seconds
 dxy : [1, 1]      # spatial resolution in x and y in (um per pixel)
 # note the lower than usual spatial resolution here

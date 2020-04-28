@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --partition=cpu_short
+#SBATCH --partition=fn_medium
 #SBATCH --job-name=caiman_pipeline
-#SBATCH --mem=100GB
-#SBATCH --time=0-04:00:00
+#SBATCH --mem=500GB
+#SBATCH --time=0-10:00:00
 #SBATCH --tasks=1
-#SBATCH --cpus-per-task=10
+#SBATCH --cpus-per-task=16
 #SBATCH --nodes=1
 #SBATCH -o logs/caiman_%j.log
 #SBATCH -e logs/caiman_%j.log

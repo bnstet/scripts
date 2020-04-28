@@ -183,7 +183,7 @@ fnames = fname
 
 #%% First setup some parameters for data and motion correction
     
-n_processes = 12
+n_processes = 16
 
 # dataset dependent parameters
 fr = 30             # imaging rate in frames per second
