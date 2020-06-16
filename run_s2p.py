@@ -1,3 +1,13 @@
+"""
+run suite2p pipeline
+
+python run_s2p.py ops_file data_path
+
+arguments:
+ops_file: path to .npy file containing the "ops" dictionary for suite2p pipeline options
+data_path: directory containing the .tif files to be processed
+
+"""
 import sys,os,glob
 from suite2p.run_s2p import run_s2p
 import numpy as np
