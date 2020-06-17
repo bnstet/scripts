@@ -16,6 +16,7 @@ from shutil import rmtree
 
 ops_file = sys.argv[1]
 data_path = sys.argv[2]
+pattern = sys.argv[3]
 
 tiff_list = sorted([os.path.basename(x) for x in glob.glob(os.path.join(data_path,pattern))])
 

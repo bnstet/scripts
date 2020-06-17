@@ -1,7 +1,7 @@
 """
-convert all directories matching "pattern" (which should contain multiple single-frame .tif files) to single tif files 
+convert all directories matching "pattern" in "base_dir" to single tif files 
 
-python convert_to_single_tiff.py pattern
+python convert_to_single_tiff.py base_dir pattern
 
 arguments:
 pattern: shell-like pattern to match when looking for directories. enclose in quotes
@@ -14,16 +14,17 @@ import tifffile as tif
 
 
 
-def convert_to_single_tiff(pattern):
-    dirnames = glob.glob(pattern)
+def convert_to_single_tiff(base_dir,pattern):
+    dirnames = glob.glob(os.path.join(base_dir,pattern))
     dirnames = [x for x in dirnames if os.path.isdir(x)]
     print('Found {} directories matching pattern {}'.format(len(dirnames),pattern))
     
     for n,dirname in enumerate(dirnames):
         print('({}/{}) converting {} to single .tif'.format(n,len(dirnames),os.path.basename(dirname)))
-        mov = tifToArray(dirname)
+        mov = tiffToArray(dirname)
         tif.imsave(file=dirname + '.tif',data=mov)
 
 if __name__=="__main__":
-    pattern = sys.argv[1]
-    convert_to_single_tiff(pattern)
+    base_dir = sys.argv[1]
+    pattern = sys.argv[2]
+    convert_to_single_tiff(base_dir,pattern)
